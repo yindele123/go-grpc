@@ -1,0 +1,3 @@
+{"level":"info","ts":1631094769.5417507,"caller":"user_web/main.go:13","msg":"注销成功:"}
+{"level":"panic","ts":1631094769.5417507,"caller":"user_web/main.go:16","msg":"启动失败:","stacktrace":"main.main\n\tD:/go/project/user_web/main.go:16\nruntime.main\n\tC:/Users/86186/go/go1.16.6/src/runtime/proc.go:225"}
+{"level":"info","ts":1631094813.6647158,"caller":"user_web/main.go:13","msg":"注销成功:"}

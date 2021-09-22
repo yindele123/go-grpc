@@ -1,0 +1,8 @@
+name: 'user_srv'
+port: 8080
+mysql:
+  host: '192.168.226.108'
+  port: 3306
+  user: "root"
+  password: "root"
+  dbName: "user_srv"

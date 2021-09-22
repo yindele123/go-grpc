@@ -1,0 +1,181 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"net/http"
+	"project/user_web/forms"
+	"project/user_web/global"
+	"project/user_web/global/reponse"
+	"project/user_web/proto"
+	"strconv"
+	"strings"
+	"time"
+)
+
+func HandleGrpcErrorToHttp(err error, c *gin.Context) {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
+			switch st.Code() {
+			case codes.NotFound:
+				c.JSON(http.StatusNotFound, gin.H{
+					"msg": st.Message(),
+				})
+			case codes.InvalidArgument:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": "参数错误",
+				})
+			case codes.Internal:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg:": "内部错误",
+				})
+			case codes.Unavailable:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "用户服务不可用",
+				})
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "内部错误",
+				})
+			}
+			return
+		}
+	}
+	return
+
+}
+func SetGender(gender uint32) string {
+	var genderName string
+	switch gender {
+	case 1:
+		genderName = "女"
+	case 2:
+		genderName = "男"
+	default:
+		genderName = "保密"
+	}
+	return genderName
+}
+
+func HandleValidatorError(c *gin.Context, err error) {
+	errs, ok := err.(validator.ValidationErrors)
+	if !ok {
+		c.JSON(http.StatusOK, gin.H{
+			"msg": err.Error(),
+		})
+	}
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error": removeTopStruct(errs.Translate(global.Trans)),
+	})
+	return
+
+}
+func removeTopStruct(fileds map[string]string) map[string]string {
+	rsp := map[string]string{}
+	for field, err := range fileds {
+		rsp[field[strings.Index(field, ".")+1:]] = err
+	}
+	return rsp
+}
+
+func GetUserList(c *gin.Context) {
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
+	if err != nil {
+		zap.S().Errorw("[GetUserList] 链接grpc失败")
+		HandleGrpcErrorToHttp(err, c)
+		return
+	}
+	defer conn.Close()
+	pn := c.DefaultQuery("pn", "0")
+	pnInt, _ := strconv.Atoi(pn)
+	pSize := c.DefaultQuery("psize", "10")
+	pSizeInt, _ := strconv.Atoi(pSize)
+	userServer := proto.NewUserClient(conn)
+	res, err := userServer.GetUserList(context.Background(), &proto.PageInfo{
+		Pn:    uint32(pnInt),
+		PSize: uint32(pSizeInt),
+	})
+	if err != nil {
+		zap.S().Errorw("[GetUserList] 查询 【用户列表】失败")
+		HandleGrpcErrorToHttp(err, c)
+		return
+	}
+	result := make([]interface{}, 0)
+	for _, value := range res.Data {
+		user := reponse.UserResponse{
+			Id:       value.Id,
+			NickName: value.NickName,
+			Mobile:   value.Mobile,
+			Birthday: reponse.JsonTime(time.Unix(int64(value.BirthDay), 0)),
+			Gender:   SetGender(value.Gender),
+		}
+
+		result = append(result, user)
+	}
+	c.JSON(http.StatusOK, result)
+
+}
+
+func PassWordLogin(c *gin.Context) {
+	passwordLoginForm := forms.PassWordLoginForm{}
+	if err := c.ShouldBind(&passwordLoginForm); err != nil {
+		HandleValidatorError(c, err)
+		return
+	}
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
+	if err != nil {
+		zap.S().Errorw("[GetUserList] 链接grpc失败")
+		HandleGrpcErrorToHttp(err, c)
+		return
+	}
+	defer conn.Close()
+	userServer := proto.NewUserClient(conn)
+	if userMobileRes, err := userServer.GetUserByMobile(context.Background(), &proto.MobileRequest{
+		Mobile: passwordLoginForm.Mobile,
+	}); err != nil {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.NotFound:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": "用户不存在",
+				})
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "登录失败",
+				})
+			}
+			return
+		}
+	} else {
+		if pasRes, pasErr := userServer.CheckPassWord(context.Background(), &proto.PasswordCheckInfo{
+			Password:          passwordLoginForm.PassWord,
+			EncryptedPassword: userMobileRes.PassWord,
+		}); pasErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": "密码错误",
+			})
+		} else {
+			if pasRes.Success {
+				c.JSON(http.StatusOK, gin.H{
+					"msg": "登录成功",
+				})
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": "密码错误",
+				})
+			}
+		}
+	}
+	/*res, err := userServer.CheckPassWord(context.Background(), &proto.PasswordCheckInfo{
+		Password:          uint32(pnInt),
+		EncryptedPassword: uint32(pSizeInt),
+	})*/
+}

@@ -60,7 +60,11 @@ func SendSms(c *gin.Context)  {
 	//ServerConfig
 	client, err := CreateClient(tea.String(global.ServerConfig.AliyunInfo.AccessKeyId), tea.String(global.ServerConfig.AliyunInfo.AccessKeySecret))
 	if err != nil {
-		panic(err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"msg":"服务器內部出错",
+		})
+		zap.S().Error("链接阿里云短信失败:", err.Error())
+		return
 	}
 	smsCode := GenerateSmsCode(6)
 

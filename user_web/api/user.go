@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -13,6 +14,8 @@ import (
 	"project/user_web/forms"
 	"project/user_web/global"
 	"project/user_web/global/reponse"
+	"project/user_web/middlewares"
+	"project/user_web/models"
 	"project/user_web/proto"
 	"strconv"
 	"strings"
@@ -130,6 +133,13 @@ func PassWordLogin(c *gin.Context) {
 		return
 	}
 
+	if !store.Verify(passwordLoginForm.CaptchaId, passwordLoginForm.Captcha, true) {
+		c.JSON(http.StatusBadRequest,gin.H{
+			"msg":"请输入正确的验证码",
+		})
+		return
+	}
+
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
 	if err != nil {
 		zap.S().Errorw("[GetUserList] 链接grpc失败")
@@ -141,11 +151,17 @@ func PassWordLogin(c *gin.Context) {
 	if userMobileRes, err := userServer.GetUserByMobile(context.Background(), &proto.MobileRequest{
 		Mobile: passwordLoginForm.Mobile,
 	}); err != nil {
+		zap.S().Errorw("[PassWordLogin] 登录用户失败")
 		if e, ok := status.FromError(err); ok {
+			fmt.Print(e.Code())
 			switch e.Code() {
 			case codes.NotFound:
 				c.JSON(http.StatusBadRequest, gin.H{
 					"msg": "用户不存在",
+				})
+			case codes.Unavailable:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "用户服务不可用",
 				})
 			default:
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -164,7 +180,31 @@ func PassWordLogin(c *gin.Context) {
 			})
 		} else {
 			if pasRes.Success {
+				j:=middlewares.NewJWT()
+				laims := models.CustomClaims{
+					ID:             uint(userMobileRes.Id),
+					NickName:       userMobileRes.NickName,
+					AuthorityId:    uint(userMobileRes.Role),
+					StandardClaims: jwt.StandardClaims{
+						NotBefore: time.Now().Unix(), //签名的生效时间
+						ExpiresAt: time.Now().Unix() + 60*60*24*30, //30天过期
+						Issuer: "xindele",
+					},
+				}
+				token,jwtErr:=j.CreateToken(laims)
+
+				if jwtErr != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"msg":"生成token失败",
+					})
+					return
+				}
+
 				c.JSON(http.StatusOK, gin.H{
+					"id": userMobileRes.Id,
+					"nick_name": userMobileRes.NickName,
+					"token": token,
+					"expired_at": (time.Now().Unix() + 60*60*24*30)*1000,
 					"msg": "登录成功",
 				})
 			} else {

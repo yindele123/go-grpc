@@ -8,11 +8,13 @@ require (
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.4.1
+	github.com/mojocn/base64Captcha v1.3.5
 	github.com/spf13/viper v1.8.1
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 	gorm.io/driver/mysql v1.1.2

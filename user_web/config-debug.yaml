@@ -5,3 +5,13 @@ user_srv:
   port: 8080
 jwtinfo:
   signingKey: '0VtZ^Qe*Y1KrlWaY#dk3'
+
+aliyunInfo:
+  accessKeyId: ''
+  accessKeySecret: ''
+  SignName: ''
+  TemplateCode: ''
+
+redisInfo:
+  host: '192.168.226.108'
+  port: 6379

@@ -13,6 +13,7 @@ import (
 
 func main() {
 	initialize.InitConfig()
+	initialize.InitRedis()
 	if transErr := initialize.InitTrans("zh"); transErr != nil {
 		zap.S().Panic("初始化翻译器错误:", transErr.Error())
 	}

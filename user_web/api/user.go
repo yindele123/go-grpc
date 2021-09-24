@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -54,6 +55,44 @@ func HandleGrpcErrorToHttp(err error, c *gin.Context) {
 	return
 
 }
+
+func HandleGrpcErrorInfoToHttp(err error, c *gin.Context) {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if ok {
+			switch st.Code() {
+			case codes.NotFound:
+				c.JSON(http.StatusNotFound, gin.H{
+					"msg": st.Message(),
+				})
+			case codes.InvalidArgument:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": st.Message(),
+				})
+			case codes.Internal:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg:": "内部错误",
+				})
+			case codes.AlreadyExists:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": st.Message(),
+				})
+			case codes.Unavailable:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "用户服务不可用",
+				})
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": "内部错误",
+				})
+			}
+			return
+		}
+	}
+	return
+
+}
+
 func SetGender(gender uint32) string {
 	var genderName string
 	switch gender {
@@ -218,4 +257,73 @@ func PassWordLogin(c *gin.Context) {
 		Password:          uint32(pnInt),
 		EncryptedPassword: uint32(pSizeInt),
 	})*/
+}
+func Register(c *gin.Context)  {
+	registerForm:=forms.RegisterForm{}
+	if err := c.ShouldBind(&registerForm); err != nil {
+		HandleValidatorError(c, err)
+		return
+	}
+	value,err:=global.Rdb.Get(context.Background(),registerForm.Mobile).Result()
+	if err == redis.Nil{
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg":"验证码错误",
+		})
+		return
+	}else {
+		if value != registerForm.Code {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg":"验证码错误",
+			})
+			return
+		}
+	}
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
+	if err != nil {
+		zap.S().Errorw("[GetUserList] 链接grpc失败")
+		HandleGrpcErrorToHttp(err, c)
+		return
+	}
+	defer conn.Close()
+	userServer := proto.NewUserClient(conn)
+	userRes, userErr := userServer.CreateUser(context.Background(), &proto.CreateUserInfo{
+		NickName: registerForm.Mobile,
+		PassWord: registerForm.PassWord,
+		Mobile:   registerForm.Mobile,
+	})
+	if userErr!=nil {
+		zap.S().Errorf("[Register] 查询 【新建用户失败】失败: %s", userErr.Error())
+		HandleGrpcErrorInfoToHttp(userErr, c)
+		return
+	}
+
+	j:=middlewares.NewJWT()
+
+	laims := models.CustomClaims{
+		ID:             uint(userRes.Id),
+		NickName:       userRes.NickName,
+		AuthorityId:    uint(userRes.Role),
+		StandardClaims: jwt.StandardClaims{
+			NotBefore: time.Now().Unix(), //签名的生效时间
+			ExpiresAt: time.Now().Unix() + 60*60*24*30, //30天过期
+			Issuer: "xindele",
+		},
+	}
+	token,jwtErr:=j.CreateToken(laims)
+
+	if jwtErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"msg":"生成token失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK,gin.H{
+		"id": userRes.Id,
+		"nick_name": userRes.NickName,
+		"token": token,
+		"msg":"注册成功",
+		"expired_at": (time.Now().Unix() + 60*60*24*30)*1000,
+	})
+
 }

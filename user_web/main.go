@@ -31,6 +31,8 @@ func main() {
 		})
 	}
 
+	initialize.InitSrvConn()
+
 	if err := r.Run(fmt.Sprintf(":%d", global.ServerConfig.Port)); err != nil {
 		zap.S().Panic("启动失败:", err.Error())
 	}

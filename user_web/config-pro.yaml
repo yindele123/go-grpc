@@ -1,7 +1,8 @@
-name: 'user_srv'
+name: 'user_web'
 port: 8082
 user_srv:
-  host: '127.0.0.1'
+  host: '192.168.111.1'
+  name: 'user_srv'
   port: 8080
 jwtinfo:
   signingKey: '0VtZ^Qe*Y1KrlWaY#dk3'
@@ -15,3 +16,7 @@ aliyunInfo:
 redisInfo:
   host: '192.168.226.108'
   port: 6379
+
+consul:
+  host: '192.168.226.108'
+  port: 8500

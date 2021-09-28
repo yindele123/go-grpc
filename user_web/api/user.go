@@ -8,7 +8,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -132,19 +131,11 @@ func removeTopStruct(fileds map[string]string) map[string]string {
 }
 
 func GetUserList(c *gin.Context) {
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 链接grpc失败")
-		HandleGrpcErrorToHttp(err, c)
-		return
-	}
-	defer conn.Close()
 	pn := c.DefaultQuery("pn", "0")
 	pnInt, _ := strconv.Atoi(pn)
 	pSize := c.DefaultQuery("psize", "10")
 	pSizeInt, _ := strconv.Atoi(pSize)
-	userServer := proto.NewUserClient(conn)
-	res, err := userServer.GetUserList(context.Background(), &proto.PageInfo{
+	res, err := global.UserSrvClient.GetUserList(context.Background(), &proto.PageInfo{
 		Pn:    uint32(pnInt),
 		PSize: uint32(pSizeInt),
 	})
@@ -183,15 +174,7 @@ func PassWordLogin(c *gin.Context) {
 		return
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 链接grpc失败")
-		HandleGrpcErrorToHttp(err, c)
-		return
-	}
-	defer conn.Close()
-	userServer := proto.NewUserClient(conn)
-	if userMobileRes, err := userServer.GetUserByMobile(context.Background(), &proto.MobileRequest{
+	if userMobileRes, err := global.UserSrvClient.GetUserByMobile(context.Background(), &proto.MobileRequest{
 		Mobile: passwordLoginForm.Mobile,
 	}); err != nil {
 		zap.S().Errorw("[PassWordLogin] 登录用户失败")
@@ -214,7 +197,7 @@ func PassWordLogin(c *gin.Context) {
 			return
 		}
 	} else {
-		if pasRes, pasErr := userServer.CheckPassWord(context.Background(), &proto.PasswordCheckInfo{
+		if pasRes, pasErr := global.UserSrvClient.CheckPassWord(context.Background(), &proto.PasswordCheckInfo{
 			Password:          passwordLoginForm.PassWord,
 			EncryptedPassword: userMobileRes.PassWord,
 		}); pasErr != nil {
@@ -257,10 +240,6 @@ func PassWordLogin(c *gin.Context) {
 			}
 		}
 	}
-	/*res, err := userServer.CheckPassWord(context.Background(), &proto.PasswordCheckInfo{
-		Password:          uint32(pnInt),
-		EncryptedPassword: uint32(pSizeInt),
-	})*/
 }
 func Register(c *gin.Context)  {
 	registerForm:=forms.RegisterForm{}
@@ -282,15 +261,7 @@ func Register(c *gin.Context)  {
 			return
 		}
 	}
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", global.ServerConfig.UserSrvInfo.Host, global.ServerConfig.UserSrvInfo.Port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 链接grpc失败")
-		HandleGrpcErrorToHttp(err, c)
-		return
-	}
-	defer conn.Close()
-	userServer := proto.NewUserClient(conn)
-	userRes, userErr := userServer.CreateUser(context.Background(), &proto.CreateUserInfo{
+	userRes, userErr := global.UserSrvClient.CreateUser(context.Background(), &proto.CreateUserInfo{
 		NickName: registerForm.Mobile,
 		PassWord: registerForm.PassWord,
 		Mobile:   registerForm.Mobile,

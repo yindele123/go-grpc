@@ -39,7 +39,7 @@ func main() {
 	//ConsulRegister
 
 	serviceId:=fmt.Sprintf("%s:%s",global.ServerConfig.Host,global.ServerConfig.Name)
-	var consulRegister register.Register=register.ConsulRegister{
+	var consulRegister =register.ConsulRegister{
 		Host: global.ServerConfig.ConsulInfo.Host,
 		Port: global.ServerConfig.ConsulInfo.Port,
 	}

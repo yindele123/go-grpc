@@ -12,6 +12,7 @@ import (
 	"project/user_srv/handler"
 	"project/user_srv/initialize"
 	"project/user_srv/proto"
+	"project/user_srv/utils"
 )
 
 // HealthImpl 健康检查实现
@@ -46,6 +47,10 @@ func main() {
 	var consulRegister register.Register=register.ConsulRegister{
 		Host: global.ServerConfig.ConsulInfo.Host,
 		Port: global.ServerConfig.ConsulInfo.Port,
+	}
+	port, err := utils.GetFreePort()
+	if err == nil {
+		global.ServerConfig.Port = port
 	}
 	rerr:=consulRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, []string{"xindele", "yindele123","user-srv"}, serviceId)
 	if rerr != nil {

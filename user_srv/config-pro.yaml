@@ -1,3 +1,4 @@
+host: '192.168.111.1'
 name: 'user_srv'
 port: 8080
 mysql:
@@ -6,3 +7,7 @@ mysql:
   user: "root"
   password: "root"
   dbName: "user_srv"
+
+consul:
+  host: '192.168.226.108'
+  port: 8500

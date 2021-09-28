@@ -32,9 +32,13 @@ func HandleGrpcErrorToHttp(err error, c *gin.Context) {
 				c.JSON(http.StatusNotFound, gin.H{
 					"msg": st.Message(),
 				})
+			case codes.AlreadyExists:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": st.Message(),
+				})
 			case codes.InvalidArgument:
 				c.JSON(http.StatusBadRequest, gin.H{
-					"msg": "参数错误",
+					"msg": st.Message(),
 				})
 			case codes.Internal:
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -56,7 +60,7 @@ func HandleGrpcErrorToHttp(err error, c *gin.Context) {
 
 }
 
-func HandleGrpcErrorInfoToHttp(err error, c *gin.Context) {
+/*func HandleGrpcErrorInfoToHttp(err error, c *gin.Context) {
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok {
@@ -91,7 +95,7 @@ func HandleGrpcErrorInfoToHttp(err error, c *gin.Context) {
 	}
 	return
 
-}
+}*/
 
 func SetGender(gender uint32) string {
 	var genderName string
@@ -293,7 +297,7 @@ func Register(c *gin.Context)  {
 	})
 	if userErr!=nil {
 		zap.S().Errorf("[Register] 查询 【新建用户失败】失败: %s", userErr.Error())
-		HandleGrpcErrorInfoToHttp(userErr, c)
+		HandleGrpcErrorToHttp(userErr, c)
 		return
 	}
 

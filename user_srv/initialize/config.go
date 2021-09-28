@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"project/user_srv/global"
+	"project/user_web/utils"
 )
 
 func GetEnvInfo(env string) bool {
@@ -15,7 +16,7 @@ func GetEnvInfo(env string) bool {
 func InitConfig() {
 	debug := GetEnvInfo("MXSHOP_DEBUG")
 	configFilePrefix := "config"
-	configFileName := fmt.Sprintf("user_srv/%s-pro.yaml", configFilePrefix)
+	configFileName := fmt.Sprintf("%s/%s-pro.yaml", utils.GetCurrentPath(),configFilePrefix)
 	if debug {
 		configFileName = fmt.Sprintf("user_srv/%s-debug.yaml", configFilePrefix)
 	}

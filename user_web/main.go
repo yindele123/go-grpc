@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"project/user_web/global"
 	"project/user_web/initialize"
+	"project/user_web/utils/register"
 	validator2 "project/user_web/validator"
 )
 
@@ -33,6 +34,19 @@ func main() {
 
 	initialize.InitSrvConn()
 
+	//注册服务
+
+	//ConsulRegister
+
+	serviceId:=fmt.Sprintf("%s:%s",global.ServerConfig.Host,global.ServerConfig.Name)
+	var consulRegister register.Register=register.ConsulRegister{
+		Host: global.ServerConfig.ConsulInfo.Host,
+		Port: global.ServerConfig.ConsulInfo.Port,
+	}
+	rerr:=consulRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.Name, []string{"xindele", "yindele123","user-web"}, serviceId)
+	if rerr != nil {
+		zap.S().Panic("注册服务失败:", rerr.Error())
+	}
 	if err := r.Run(fmt.Sprintf(":%d", global.ServerConfig.Port)); err != nil {
 		zap.S().Panic("启动失败:", err.Error())
 	}

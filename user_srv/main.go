@@ -43,7 +43,10 @@ func main() {
 	//注册服务
 	//register
 	serviceId:=fmt.Sprintf("%s:%s",global.ServerConfig.Host,global.ServerConfig.ServiceName)
-	var consulRegister register.Register=register.ConsulRegister{}
+	var consulRegister register.Register=register.ConsulRegister{
+		Host: global.ServerConfig.ConsulInfo.Host,
+		Port: global.ServerConfig.ConsulInfo.Port,
+	}
 	rerr:=consulRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, []string{"xindele", "yindele123","user-srv"}, serviceId)
 	if rerr != nil {
 		zap.S().Panic("注册服务失败:", rerr.Error())

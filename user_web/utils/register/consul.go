@@ -21,7 +21,7 @@ func (c ConsulRegister) Register(address string, port int, name string, tags []s
 
 	//生成对应的检查对象
 	check := &api.AgentServiceCheck{
-		GRPC:                           fmt.Sprintf("%s:%d", address, port),
+		HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
 		Timeout:                        "5s",
 		Interval:                       "5s",
 		DeregisterCriticalServiceAfter: "10s",
@@ -52,12 +52,4 @@ func (c ConsulRegister) Deregister(serviceId string) error {
 	}
 	err = client.Agent().ServiceDeregister(serviceId)
 	return err
-}
-
-func (c ConsulRegister) GetAllAervice() (str map[string]*api.AgentService) {
-	return
-}
-
-func (c ConsulRegister) FilterService(filter string) (str map[string]*api.AgentService) {
-	return
 }

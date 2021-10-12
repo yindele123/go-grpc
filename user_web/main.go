@@ -5,11 +5,15 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	"github.com/nacos-group/nacos-sdk-go/inner/uuid"
 	"go.uber.org/zap"
+	"os"
+	"os/signal"
 	"project/user_web/global"
 	"project/user_web/initialize"
 	"project/user_web/utils/register"
 	validator2 "project/user_web/validator"
+	"syscall"
 )
 
 func main() {
@@ -37,9 +41,9 @@ func main() {
 	//注册服务
 
 	//ConsulRegister
-
-	serviceId:=fmt.Sprintf("%s:%s",global.ServerConfig.Host,global.ServerConfig.Name)
-	var consulRegister =register.ConsulRegister{
+	uuid,_:=uuid.NewV4()
+	serviceId:=fmt.Sprintf("%s",uuid)
+	var consulRegister  register.Register=register.ConsulRegister{
 		Host: global.ServerConfig.ConsulInfo.Host,
 		Port: global.ServerConfig.ConsulInfo.Port,
 	}
@@ -47,7 +51,21 @@ func main() {
 	if rerr != nil {
 		zap.S().Panic("注册服务失败:", rerr.Error())
 	}
-	if err := r.Run(fmt.Sprintf(":%d", global.ServerConfig.Port)); err != nil {
-		zap.S().Panic("启动失败:", err.Error())
+	go func() {
+		_=r.Run(fmt.Sprintf(":%d", global.ServerConfig.Port))
+		/*if err := r.Run(fmt.Sprintf(":%d", global.ServerConfig.Port)); err != nil {
+			zap.S().Panic("启动失败:", err.Error())
+		}*/
+	}()
+
+
+	//接收终止信号
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	if err := consulRegister.Deregister(serviceId); err != nil {
+		zap.S().Info("注销失败:", err.Error())
+	}else{
+		zap.S().Info("注销成功:")
 	}
 }

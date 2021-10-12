@@ -3,16 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/inner/uuid"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"net"
+	"os"
+	"os/signal"
 	"project/common/register"
 	"project/user_srv/global"
 	"project/user_srv/handler"
 	"project/user_srv/initialize"
 	"project/user_srv/proto"
 	"project/user_srv/utils"
+	"syscall"
 )
 
 // HealthImpl 健康检查实现
@@ -43,7 +47,8 @@ func main() {
 
 	//注册服务
 	//register
-	serviceId:=fmt.Sprintf("%s:%s",global.ServerConfig.Host,global.ServerConfig.ServiceName)
+	uuid,_:=uuid.NewV4()
+	serviceId:= fmt.Sprintf("%s", uuid)
 	var consulRegister register.Register=register.ConsulRegister{
 		Host: global.ServerConfig.ConsulInfo.Host,
 		Port: global.ServerConfig.ConsulInfo.Port,
@@ -60,5 +65,18 @@ func main() {
 	if err != nil {
 		zap.S().Panic("启动失败:", err.Error())
 	}
-	_ = g.Serve(lis)
+	go func() {
+		_ = g.Serve(lis)
+	}()
+
+
+	//接收终止信号
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	if err := consulRegister.Deregister(serviceId); err != nil {
+		zap.S().Info("注销失败:", err.Error())
+	}else{
+		zap.S().Info("注销成功:")
+	}
 }

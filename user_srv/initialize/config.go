@@ -83,6 +83,7 @@ func InitConfig() {
 		Group:  global.NacosConfig.NacosInfo.Group,
 		OnChange: func(namespace, group, dataId, data string) {
 			_ = json.Unmarshal([]byte(data), &global.ServerConfig)
+			InitMysql()
 			fmt.Println(global.ServerConfig)
 
 		},

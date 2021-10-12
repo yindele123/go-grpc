@@ -73,10 +73,23 @@ func InitConfig() {
 		zap.S().Panic("获取nacos配置失败!", contentErr.Error())
 	}
 
-	fmt.Println(content)
+
 
 	err := json.Unmarshal([]byte(content), &global.ServerConfig)
 	if err != nil {
 		zap.S().Fatalf("读取nacos配置失败： %s", err.Error())
+	}
+
+	listenErr := configClient.ListenConfig(vo.ConfigParam{
+		DataId: global.NacosConfig.NacosInfo.DataId,
+		Group:  global.NacosConfig.NacosInfo.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			_ = json.Unmarshal([]byte(data), &global.ServerConfig)
+			fmt.Println(global.ServerConfig)
+
+		},
+	})
+	if listenErr != nil {
+		zap.S().Error("监听nacos失败!", contentErr.Error())
 	}
 }

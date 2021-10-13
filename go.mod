@@ -13,6 +13,7 @@ require (
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-redis/redis/v8 v8.11.3
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/consul/api v1.3.0
 	github.com/mbobakov/grpc-consul-resolver v1.4.4
 	github.com/mojocn/base64Captcha v1.3.5
@@ -23,8 +24,12 @@ require (
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
-	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.26.0
+	golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 // indirect
+	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20211013025323-ce878158c4d4 // indirect
+	google.golang.org/grpc v1.41.0
+	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.14
 )

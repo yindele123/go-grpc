@@ -1,0 +1,56 @@
+syntax = "proto3";
+import "base.proto";
+option go_package = "./;proto";
+
+service Category{
+  //商品分类
+  rpc GetAllCategorysList(Empty) returns(CategoryListResponse); //获取所有的分类
+  //获取子分类
+  rpc GetSubCategory(CategoryListRequest) returns(SubCategoryListResponse);
+  rpc CreateCategory(CategoryInfoRequest) returns(CategoryInfoResponse); //新建分类信息cd
+  rpc DeleteCategory(DeleteCategoryRequest) returns(Empty); //删除分类
+  rpc UpdateCategory(CategoryInfoRequest) returns(Empty); //修改分类信息
+
+}
+
+
+
+message CategoryListRequest {
+  int32 id = 1;
+  int32 level = 2;
+}
+
+
+message CategoryInfoRequest {
+  int32 id = 1;
+  string name = 2;
+  int32 parentCategory = 3;
+  int32 level = 4;
+  bool isTab = 5;
+}
+
+
+message DeleteCategoryRequest {
+  int32 id = 1;
+}
+
+
+message CategoryInfoResponse {
+  int32 id = 1;
+  string name = 2;
+  int32 parentCategory = 3;
+  int32 level = 4;
+  bool isTab = 5;
+}
+
+message CategoryListResponse {
+  int32 total = 1;
+  repeated CategoryInfoResponse data = 2;
+  string jsonData = 3;
+}
+
+message SubCategoryListResponse {
+  int32 total = 1;
+  CategoryInfoResponse info = 2;
+  repeated CategoryInfoResponse subCategorys = 3;
+}

@@ -36,7 +36,7 @@ message DeleteGoodsInfo {
 }
 
 message CategoryBriefInfoResponse {
-    int32 id = 1;
+    uint32 id = 1;
     string name = 2;
 }
 
@@ -95,13 +95,13 @@ message GoodsFilterRequest  {
 
 
 message GoodsInfoResponse {
-    int32 id = 1;
-    int32 categoryId = 2;
+    uint64 id = 1;
+    uint32 categoryId = 2;
     string name = 3;
     string goodsSn = 4;
-    int32 clickNum = 5;
-    int32 soldNum = 6;
-    int32 favNum = 7;
+    uint32 clickNum = 5;
+    uint32 soldNum = 6;
+    uint32 favNum = 7;
     float marketPrice = 9;
     float shopPrice = 10;
     string goodsBrief = 11;

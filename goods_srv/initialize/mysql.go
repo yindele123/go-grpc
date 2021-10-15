@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"project/goods_srv/global"
-	"project/goods_srv/model"
 	"time"
 )
 
@@ -40,7 +39,7 @@ func InitMysql() {
 
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(time.Hour)
-	db.AutoMigrate(&model.Goodscategorybrand{})
+	//db.AutoMigrate(&model.Goods{},&model.Banners{},&model.Brands{},&model.Category{},&model.Goodscategorybrand{})
 	//MysqlDb
 	global.MysqlDb=db
 }

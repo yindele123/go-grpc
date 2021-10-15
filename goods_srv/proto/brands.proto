@@ -49,7 +49,7 @@ message BrandRequest {
 }
 
 message BrandInfoResponse {
-  int32 id = 1;
+  uint32 id = 1;
   string name = 2;
   string logo = 3;
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func main()  {
-	conn,err := grpc.Dial("127.0.0.1:8080",grpc.WithInsecure())
+	conn,err := grpc.Dial("192.168.111.1:8911",grpc.WithInsecure())
 	if err!=nil{
 		panic(err)
 	}
@@ -51,8 +51,10 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.CreateGoods(context.Background(),&proto.CreateGoodsInfo{
-		Name :"好康人",
+	r,err :=c.GoodsList(context.Background(),&proto.GoodsFilterRequest{
+		/*KeyWords: "fewfewf",
+		PriceMin:10,
+		Brand:1,*/
 	})
 	if err!=nil{
 		panic(err)

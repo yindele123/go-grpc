@@ -13,7 +13,6 @@ require (
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-redis/redis/v8 v8.11.3
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/consul/api v1.3.0
 	github.com/mbobakov/grpc-consul-resolver v1.4.4
 	github.com/mojocn/base64Captcha v1.3.5
@@ -31,7 +30,7 @@ require (
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/mysql v1.1.2
-	gorm.io/gorm v1.21.14
+	gorm.io/gorm v1.21.16
 )
 
 replace google.golang.org/grpc => github.com/grpc/grpc-go v1.40.0

@@ -36,12 +36,12 @@ func (u *UserServer) GetUserList(ctx context.Context, request *proto.PageInfo) (
 	//where map[string]interface{}{
 	//		"mobile": "18602058150 or 1=1",
 	//	}
-	userList, rows, err := model.GetUserList("", "", int(offset), int(limit))
+	userList, rows, err := model.GetUserList("", []interface{}{},"", int(offset), int(limit))
 	if err != nil {
 		zap.S().Error("服务器内部出错", err.Error())
 		return &proto.UserListResonse{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
-	total, er := model.GetUserCount("")
+	total, er := model.GetUserCount("", []interface{}{})
 	if er != nil {
 		zap.S().Error("服务器内部出错", er.Error())
 		return &proto.UserListResonse{}, status.Errorf(codes.Internal, "服务器内部出错")
@@ -62,9 +62,7 @@ func (u *UserServer) GetUserByMobile(ctx context.Context, request *proto.MobileR
 	if len(mobile) == 0 {
 		return &proto.UserInfoResponse{}, status.Errorf(codes.InvalidArgument, "Mobile信息无效")
 	}
-	UserFirst, rows, err := model.GetUserFirst(map[string]interface{}{
-		"mobile": mobile,
-	}, "")
+	UserFirst, rows, err := model.GetUserFirst("mobile=?",[]interface{}{mobile}, "")
 
 	if err != nil {
 		zap.S().Error("服务器内部出错", err.Error())
@@ -84,9 +82,7 @@ func (u *UserServer) GetUserById(ctx context.Context, request *proto.IdRequest) 
 	if id == 0 {
 		return &proto.UserInfoResponse{}, status.Errorf(codes.InvalidArgument, "Id信息无效")
 	}
-	UserFirst, rows, err := model.GetUserFirst(map[string]interface{}{
-		"id": id,
-	}, "")
+	UserFirst, rows, err := model.GetUserFirst("id=?",[]interface{}{id}, "")
 
 	if err != nil {
 		zap.S().Error("服务器内部出错", err.Error())
@@ -101,7 +97,7 @@ func (u *UserServer) GetUserById(ctx context.Context, request *proto.IdRequest) 
 }
 
 func (u *UserServer) CreateUser(ctx context.Context, request *proto.CreateUserInfo) (*proto.UserInfoResponse, error) {
-	_, rows, err := model.GetUserFirst(map[string]interface{}{"mobile": request.Mobile}, "")
+	_, rows, err := model.GetUserFirst("mobile=?",[]interface{}{request.Mobile}, "")
 	if err != nil {
 		zap.S().Error("服务器内部出错", err.Error())
 		return &proto.UserInfoResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
@@ -134,9 +130,7 @@ func (u *UserServer) CreateUser(ctx context.Context, request *proto.CreateUserIn
 }
 
 func (u *UserServer) UpdateUser(ctx context.Context, request *proto.UpdateUserInfo) (*proto.Empty, error) {
-	UserFirst, rows, err := model.GetUserFirst(map[string]interface{}{
-		"id": request.Id,
-	}, "")
+	UserFirst, rows, err := model.GetUserFirst("id=?",[]interface{}{request.Id}, "")
 	if err != nil {
 		zap.S().Error("服务器内部出错", err.Error())
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
@@ -148,9 +142,7 @@ func (u *UserServer) UpdateUser(ctx context.Context, request *proto.UpdateUserIn
 		"nick_name": request.NickName,
 		"gender":    request.Gender,
 		"birthday":  request.BirthDay,
-	}, map[string]interface{}{
-		"id": UserFirst.ID,
-	})
+	}, "id=?",[]interface{}{UserFirst.ID})
 	if er != nil {
 		zap.S().Error("服务器内部出错", er.Error())
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")

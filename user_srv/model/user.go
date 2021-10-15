@@ -20,44 +20,45 @@ type User struct {
 	DeletedAt uint32 `gorm:"comment:'删除时间';default:0"`
 }
 
-func GetUserList(where interface{}, fields string, Offset int, limit int) (User []User, rows int64, err error) {
+func GetUserList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (User []User, rows int64, err error) {
 	mod := global.MysqlDb.Limit(limit).Offset(Offset)
 	if len(fields) != 0 {
 		mod.Select(fields)
 	}
-	if where != nil {
-		mod.Where(where)
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
 	}
 	result := mod.Find(&User)
 	return User, result.RowsAffected, result.Error
 }
 
-func GetUserCount(where interface{}) (count int64, err error) {
+func GetUserCount(whereSql string,vals []interface{}) (count int64, err error) {
 	mod := global.MysqlDb.Model(&User{})
-	if where != nil {
-		mod.Where(where)
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
 	}
 	result := mod.Count(&count)
 	return count, result.Error
 }
 
-func GetUserFirst(where interface{}, fields string) (UserFirst User, rows int64, err error) {
+func GetUserFirst(whereSql string,vals []interface{}, fields string) (UserFirst User, rows int64, err error) {
 	mod := global.MysqlDb.Limit(1)
 	if len(fields) != 0 {
 		mod.Select(fields)
 	}
-	if where != nil {
-		mod.Where(where)
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
 	}
 	result := mod.Find(&UserFirst)
 	return UserFirst, result.RowsAffected, result.Error
 }
 
-func UpdateUser(data interface{}, where interface{}) (err error) {
-	if data == nil || where == nil {
+func UpdateUser(data interface{}, whereSql string,vals []interface{}) (err error) {
+	if data == nil || len(whereSql) == 0 || len(vals) == 0 {
 		return
 	}
-	result := global.MysqlDb.Model(&User{}).Where(where).Updates(data)
+
+	result := global.MysqlDb.Model(&User{}).Where(whereSql,vals...).Updates(data)
 	return result.Error
 }
 

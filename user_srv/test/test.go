@@ -8,7 +8,7 @@ import (
 )
 
 func main()  {
-	conn,err := grpc.Dial("127.0.0.1:8080",grpc.WithInsecure())
+	conn,err := grpc.Dial("192.168.111.1:57695",grpc.WithInsecure())
 	if err!=nil{
 		panic(err)
 	}
@@ -23,14 +23,15 @@ func main()  {
 		panic(err)
 	}
 	fmt.Println(r.Data,r.Total)*/
-	/*//通过手机号码获取用户信息
+
+	//通过手机号码获取用户信息
 	r,err :=c.GetUserByMobile(context.Background(),&proto.MobileRequest{
 		Mobile:"18602058150",
 	})
 	if err!=nil{
 		panic(err)
 	}
-	fmt.Println(r.Id,r.Mobile)*/
+	fmt.Println(r.Id,r.Mobile)
 	//通过id获取用户信息
 	/*r,err :=c.GetUserById(context.Background(),&proto.IdRequest{
 		Id:1,
@@ -51,7 +52,7 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.CreateUser(context.Background(),&proto.CreateUserInfo{
+	/*r,err :=c.CreateUser(context.Background(),&proto.CreateUserInfo{
 		NickName :"好康人",
 		PassWord :"12346789",
 		Mobile :"18602058156",
@@ -59,5 +60,5 @@ func main()  {
 	if err!=nil{
 		panic(err)
 	}
-	fmt.Println(r)
+	fmt.Println(r)*/
 }

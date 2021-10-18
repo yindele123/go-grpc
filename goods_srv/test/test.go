@@ -13,7 +13,8 @@ func main()  {
 		panic(err)
 	}
 	defer conn.Close()
-	c := proto.NewGoodsClient(conn)
+	//c := proto.NewGoodsClient(conn)
+	c := proto.NewCategoryClient(conn)
 	//用户列表
 	/*r,err := c.GetGoodsList(context.Background(),&proto.PageInfo{
 		Pn:    1,
@@ -51,14 +52,11 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.GoodsList(context.Background(),&proto.GoodsFilterRequest{
-		/*KeyWords: "fewfewf",
-		PriceMin:10,
-		Brand:1,*/
-		TopCategory:1,
+	r,err :=c.GetAllCategorysList(context.Background(),&proto.CategoryListRequest{
+		Id: 3,
 	})
 	if err!=nil{
 		panic(err)
 	}
-	fmt.Println(r)
+	fmt.Println(r.Data)
 }

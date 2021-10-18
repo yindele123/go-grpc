@@ -4,9 +4,8 @@ option go_package = "./;proto";
 
 service Category{
   //商品分类
-  rpc GetAllCategorysList(Empty) returns(CategoryListResponse); //获取所有的分类
-  //获取子分类
-  rpc GetSubCategory(CategoryListRequest) returns(SubCategoryListResponse);
+  rpc GetAllCategorysList(CategoryListRequest) returns(CategoryListResponse); //获取所有的分类
+
   rpc CreateCategory(CategoryInfoRequest) returns(CategoryInfoResponse); //新建分类信息cd
   rpc DeleteCategory(DeleteCategoryRequest) returns(Empty); //删除分类
   rpc UpdateCategory(CategoryInfoRequest) returns(Empty); //修改分类信息
@@ -16,8 +15,7 @@ service Category{
 
 
 message CategoryListRequest {
-  int32 id = 1;
-  int32 level = 2;
+  uint32 id = 1;
 }
 
 
@@ -36,11 +34,12 @@ message DeleteCategoryRequest {
 
 
 message CategoryInfoResponse {
-  int32 id = 1;
+  uint32 id = 1;
   string name = 2;
-  int32 parentCategory = 3;
+  uint32 parentCategory = 3;
   int32 level = 4;
   bool isTab = 5;
+  repeated CategoryInfoResponse subCategorys = 6;
 }
 
 message CategoryListResponse {

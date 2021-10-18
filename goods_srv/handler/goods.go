@@ -8,11 +8,56 @@ import (
 	"google.golang.org/grpc/status"
 	"project/goods_srv/model"
 	"project/goods_srv/proto"
+	"project/goods_srv/utils"
 	"time"
 )
 
 type GoodsServer struct {
 }
+
+func ConvertGoodsCategory(goodsList []model.Goods,rows int64) (result []*proto.GoodsInfoResponse,ok bool) {
+	categoryIds := make([]uint32, 0)
+	BrandIds := make([]uint32, 0)
+
+	if rows != 0 {
+		for _, value := range goodsList {
+			categoryIds = append(categoryIds, value.CategoryId)
+			BrandIds = append(BrandIds, value.BrandId)
+		}
+	}
+
+	categoryWhere, categoryVals, _ := WhereBuild(map[string]interface{}{"id in": RemoveDuplicateElement(categoryIds), "is_deleted": false})
+	categoryList, _, categoryErr := model.GetCategoryList(categoryWhere, categoryVals, "id,name", 0, 0)
+	if categoryErr != nil {
+		zap.S().Error("服务器内部出错", categoryErr.Error())
+		return result,false
+	}
+
+	brandsWhere, brandsVals, _ := WhereBuild(map[string]interface{}{"id in": RemoveDuplicateElement(BrandIds), "is_deleted": false})
+	brandsList, _, brandsErr := model.GetBrandsList(brandsWhere, brandsVals, "id,name,logo", 0, 0)
+	if brandsErr != nil {
+		zap.S().Error("服务器内部出错", brandsErr.Error())
+		return result,false
+	}
+	brandsConvert := StructSliceToMap(brandsList, "Id")
+	categoryConvert := StructSliceToMap(categoryList, "Id")
+
+	for _, value := range goodsList {
+		brandData := model.Brands{}
+		categoryData := model.Category{}
+		if _, ok := brandsConvert[fmt.Sprint(value.BrandId)]; ok {
+			brandData = brandsConvert[fmt.Sprint(value.BrandId)][0].(model.Brands)
+		}
+		if _, ok := categoryConvert[fmt.Sprint(value.CategoryId)]; ok {
+			categoryData = categoryConvert[fmt.Sprint(value.CategoryId)][0].(model.Category)
+		}
+		res := ConvertGoodsToRsp(value, brandData, categoryData)
+		result = append(result, &res)
+	}
+	return result,true
+}
+
+
 
 func (g *GoodsServer) GoodsList(ctx context.Context, request *proto.GoodsFilterRequest) (*proto.GoodsListResponse, error) {
 	var where = make(map[string]interface{}, 0)
@@ -38,6 +83,13 @@ func (g *GoodsServer) GoodsList(ctx context.Context, request *proto.GoodsFilterR
 		where["brand_id"] = request.Brand
 
 	}
+	if request.TopCategory!=0{
+		ids:=utils.GetMenuIds(request.TopCategory)
+		ids=append(ids,request.TopCategory)
+		where["category_id in"] = ids
+
+	}
+
 	whereSql, vals, _ := WhereBuild(where)
 	var offset int32 = 0
 	var limit int32 = 10
@@ -47,8 +99,6 @@ func (g *GoodsServer) GoodsList(ctx context.Context, request *proto.GoodsFilterR
 	if request.PagePerNums != 0 {
 		offset = limit * (request.PagePerNums - 1)
 	}
-
-
 	goodsList, rows, goodsErr := model.GetGoodsList(whereSql,vals, "", int(offset), int(limit))
 	if goodsErr != nil {
 		zap.S().Error("服务器内部出错", goodsErr.Error())
@@ -59,50 +109,36 @@ func (g *GoodsServer) GoodsList(ctx context.Context, request *proto.GoodsFilterR
 		zap.S().Error("服务器内部出错", countErr.Error())
 		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
-	result := make([]*proto.GoodsInfoResponse, 0)
-	categoryIds := make([]uint32, 0)
-	BrandIds := make([]uint32, 0)
-	if rows != 0 {
-		for _, value := range goodsList {
-			categoryIds = append(categoryIds, value.CategoryId)
-			BrandIds = append(BrandIds, value.BrandId)
-		}
-	}
-	categoryWhere, categoryVals, _ := WhereBuild(map[string]interface{}{"id in": RemoveDuplicateElement(categoryIds), "is_deleted": false})
-	categoryList, _, categoryErr := model.GetCategoryList(categoryWhere, categoryVals, "id,name", 0, 0)
-	if categoryErr != nil {
-		zap.S().Error("服务器内部出错", categoryErr.Error())
+	result,ok:=ConvertGoodsCategory(goodsList,rows)
+	if !ok{
 		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
-
-	brandsWhere, brandsVals, _ := WhereBuild(map[string]interface{}{"id in": RemoveDuplicateElement(BrandIds), "is_deleted": false})
-	brandsList, _, brandsErr := model.GetBrandsList(brandsWhere, brandsVals, "id,name,logo", 0, 0)
-	if brandsErr != nil {
-		zap.S().Error("服务器内部出错", brandsErr.Error())
-		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
-	}
-	brandsConvert := StructSliceToMap(brandsList, "Id")
-	categoryConvert := StructSliceToMap(categoryList, "Id")
-
-	for _, value := range goodsList {
-		brandData := model.Brands{}
-		categoryData := model.Category{}
-		if _, ok := brandsConvert[fmt.Sprint(value.BrandId)]; ok {
-			brandData = brandsConvert[fmt.Sprint(value.BrandId)][0].(model.Brands)
-		}
-		if _, ok := categoryConvert[fmt.Sprint(value.CategoryId)]; ok {
-			categoryData = categoryConvert[fmt.Sprint(value.CategoryId)][0].(model.Category)
-		}
-		res := ConvertGoodsToRsp(value, brandData, categoryData)
-		result = append(result, &res)
-	}
-
-	return &proto.GoodsListResponse{Total: int32(total), Data: result}, nil
+	return &proto.GoodsListResponse{Total: total, Data: result}, nil
 }
 
 func (g *GoodsServer) BatchGetGoods(ctx context.Context, request *proto.BatchGoodsIdInfo) (*proto.GoodsListResponse, error) {
-	return &proto.GoodsListResponse{}, nil
+	if len(request.Id)==0 {
+		return &proto.GoodsListResponse{}, nil
+	}
+
+	goodsList, rows, goodsErr := model.GetGoodsList("id in ?",[]interface{}{request.Id}, "", 0,0)
+	if goodsErr != nil {
+		zap.S().Error("服务器内部出错", goodsErr.Error())
+		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	total, countErr := model.GetGoodsCount("id in ?",[]interface{}{request.Id})
+	if countErr != nil {
+		zap.S().Error("服务器内部出错", countErr.Error())
+		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+
+	result,ok:=ConvertGoodsCategory(goodsList,rows)
+	if !ok{
+		return &proto.GoodsListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	return &proto.GoodsListResponse{Total: total,Data: result}, nil
 }
+
 func (g *GoodsServer) CreateGoods(ctx context.Context, request *proto.CreateGoodsInfo) (*proto.GoodsInfoResponse, error) {
 
 	categoryFirst, categoryRows, categoryErr := model.GetCategoryFirst("id = ?",[]interface{}{request.CategoryId}, "id,name")
@@ -150,6 +186,7 @@ func (g *GoodsServer) CreateGoods(ctx context.Context, request *proto.CreateGood
 	res := ConvertGoodsToRsp(resCreate, brandsFirst, categoryFirst)
 	return &res, nil
 }
+
 func (g *GoodsServer) DeleteGoods(ctx context.Context, rq *proto.DeleteGoodsInfo) (*proto.Empty, error) {
 	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ?",[]interface{}{rq.Id}, "id")
 
@@ -170,6 +207,7 @@ func (g *GoodsServer) DeleteGoods(ctx context.Context, rq *proto.DeleteGoodsInfo
 	}
 	return &proto.Empty{}, nil
 }
+
 func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo) (*proto.Empty, error) {
 	categoryFirst, categoryRows, categoryErr := model.GetCategoryFirst("id = ?",[]interface{}{rq.CategoryId}, "id,name")
 
@@ -225,6 +263,7 @@ func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo
 
 	return &proto.Empty{}, nil
 }
+
 func (g *GoodsServer) GetGoodsDetail(ctx context.Context, rq *proto.GoodInfoRequest) (*proto.GoodsInfoResponse, error) {
 	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ?",[]interface{}{rq.Id}, "")
 	if goodsErr != nil {
@@ -255,4 +294,3 @@ func (g *GoodsServer) GetGoodsDetail(ctx context.Context, rq *proto.GoodInfoRequ
 	res := ConvertGoodsToRsp(goodsFirst, brands, category)
 	return &res, nil
 }
-

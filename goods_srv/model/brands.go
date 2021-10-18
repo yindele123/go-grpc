@@ -20,7 +20,7 @@ func GetBrandsList(whereSql string,vals []interface{}, fields string, Offset int
 	if len(whereSql) != 0 && len(vals) != 0{
 		mod.Where(whereSql,vals...)
 	}
-	result := mod.Debug().Find(&resBrands)
+	result := mod.Find(&resBrands)
 	return resBrands, result.RowsAffected, result.Error
 }
 

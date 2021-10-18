@@ -41,8 +41,8 @@ func main() {
 	initialize.InitLogger()
 
 	g := grpc.NewServer()
-	GoodsServer := handler.GoodsServer{}
-	proto.RegisterGoodsServer(g, &GoodsServer)
+	goodsServer := handler.GoodsServer{}
+	proto.RegisterGoodsServer(g, &goodsServer)
 	grpc_health_v1.RegisterHealthServer(g, &HealthImpl{})//比普通的grpc开启多了这一步
 
 	//注册服务

@@ -55,6 +55,7 @@ func main()  {
 		/*KeyWords: "fewfewf",
 		PriceMin:10,
 		Brand:1,*/
+		TopCategory:1,
 	})
 	if err!=nil{
 		panic(err)

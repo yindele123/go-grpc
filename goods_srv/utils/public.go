@@ -27,7 +27,7 @@ func GetMenu(parentId uint32) []*proto.CategoryInfoResponse {
 				Id:       item.ID,
 				ParentCategory: item.ParentCategoryId,
 				Name:     item.Name,
-				Level:    int32(item.Level),
+				Level:    item.Level,
 				IsTab:    item.IsTab,
 			}
 			node.SubCategorys = child

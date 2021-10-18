@@ -6,7 +6,7 @@ type Category struct {
 	ID               uint32
 	Name             string `gorm:"type:varchar(20);default:'';comment:'名称'"`
 	ParentCategoryId uint32 `gorm:"index:category_parent_category_id;comment:'父类别';default:0"`
-	Level            uint8  `gorm:"type:tinyint(2) UNSIGNED;comment:'级别';default:0"`
+	Level            int32  `gorm:"type:tinyint(2) UNSIGNED;comment:'级别';default:0"`
 	IsTab            bool   `gorm:"type:bool;comment:'是否显示在首页tab,1:是,0:否';default:false"`
 	CreatedAt        uint32 `gorm:"comment:'添加时间';default:0"`
 	UpdatedAt        uint32 `gorm:"comment:'更新时间';default:0"`
@@ -46,4 +46,18 @@ func GetCategoryFirst(whereSql string,vals []interface{}, fields string) (catego
 	}
 	result := mod.Find(&categoryFirst)
 	return categoryFirst, result.RowsAffected, result.Error
+}
+
+
+func CreateCategory(category Category) (data Category, err error) {
+	result := global.MysqlDb.Create(&category)
+	return category, result.Error
+}
+
+func UpdateCategory(data interface{}, whereSql string,vals []interface{}) (err error) {
+	if data == nil || len(whereSql) == 0 || len(vals) == 0{
+		return
+	}
+	result := global.MysqlDb.Model(&Category{}).Where(whereSql,vals...).Updates(data)
+	return result.Error
 }

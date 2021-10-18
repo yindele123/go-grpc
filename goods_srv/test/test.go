@@ -52,11 +52,12 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.GetAllCategorysList(context.Background(),&proto.CategoryListRequest{
-		Id: 3,
+	r,err :=c.UpdateCategory(context.Background(),&proto.CategoryInfoRequest{
+		Id: 1,
+		Name: "手机",
 	})
 	if err!=nil{
 		panic(err)
 	}
-	fmt.Println(r.Data)
+	fmt.Println(r)
 }

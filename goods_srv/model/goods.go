@@ -50,7 +50,7 @@ func GetGoodsCount(whereSql string,vals []interface{}) (count int64, err error) 
 	return count, result.Error
 }
 
-func UpdateGoods(data interface{}, whereSql string,vals []interface{},) (err error) {
+func UpdateGoods(data interface{}, whereSql string,vals []interface{}) (err error) {
 	if data == nil || len(whereSql) == 0 || len(vals) == 0{
 		return
 	}

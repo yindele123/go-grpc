@@ -20,9 +20,9 @@ message CategoryListRequest {
 
 
 message CategoryInfoRequest {
-  int32 id = 1;
+  uint32 id = 1;
   string name = 2;
-  int32 parentCategory = 3;
+  uint32 parentCategory = 3;
   int32 level = 4;
   bool isTab = 5;
 }

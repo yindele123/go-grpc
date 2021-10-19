@@ -12,7 +12,7 @@ type Brands struct {
 	DeletedAt uint32 `gorm:"comment:'删除时间';default:0"`
 }
 
-func GetBrandsList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (resBrands []Brands, rows int64, err error) {
+func GetBrandsList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (resBrands []Brands, rows uint32, err error) {
 	mod := global.MysqlDb.Limit(limit).Offset(Offset)
 	if len(fields) != 0 {
 		mod.Select(fields)
@@ -21,10 +21,10 @@ func GetBrandsList(whereSql string,vals []interface{}, fields string, Offset int
 		mod.Where(whereSql,vals...)
 	}
 	result := mod.Find(&resBrands)
-	return resBrands, result.RowsAffected, result.Error
+	return resBrands, uint32(result.RowsAffected), result.Error
 }
 
-func GetBrandsFirst(whereSql string,vals []interface{}, fields string) (brandsFirst Brands, rows int64, err error) {
+func GetBrandsFirst(whereSql string,vals []interface{}, fields string) (brandsFirst Brands, rows uint32, err error) {
 	mod := global.MysqlDb.Limit(1)
 	if len(fields) != 0 {
 		mod.Select(fields)
@@ -33,6 +33,29 @@ func GetBrandsFirst(whereSql string,vals []interface{}, fields string) (brandsFi
 		mod.Where(whereSql,vals...)
 	}
 	result := mod.Find(&brandsFirst)
-	return brandsFirst, result.RowsAffected, result.Error
+	return brandsFirst, uint32(result.RowsAffected), result.Error
+}
+
+func GetBrandsCount(whereSql string, vals []interface{}) (resCount uint32, err error) {
+	mod := global.MysqlDb.Model(&Brands{})
+	if len(whereSql) != 0 && len(vals) != 0 {
+		mod.Where(whereSql, vals...)
+	}
+	var count int64
+	result := mod.Count(&count)
+	return uint32(count), result.Error
+}
+
+func CreateBrands(brands Brands) (data Brands, err error) {
+	result := global.MysqlDb.Create(&brands)
+	return brands, result.Error
+}
+
+func UpdateBrands(data interface{}, whereSql string, vals []interface{}) (err error) {
+	if data == nil || len(whereSql) == 0 || len(vals) == 0 {
+		return
+	}
+	result := global.MysqlDb.Model(&Brands{}).Where(whereSql, vals...).Updates(data)
+	return result.Error
 }
 

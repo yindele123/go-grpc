@@ -55,7 +55,7 @@ message BrandInfoResponse {
 }
 
 message BrandListResponse {
-  int32 total = 1;
+  uint32 total = 1;
   repeated BrandInfoResponse data = 2;
 }
 

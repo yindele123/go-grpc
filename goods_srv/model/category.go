@@ -24,6 +24,11 @@ type Goodscategorybrand struct {
 	DeletedAt  uint32 `gorm:"comment:'删除时间';default:0"`
 }
 
+// TableName 表名
+func (Goodscategorybrand) TableName() string {
+	return "t_goodscategorybrand"
+}
+
 func GetCategoryList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (resCategory []Category, rows int64, err error) {
 	mod := global.MysqlDb.Limit(limit).Offset(Offset)
 	if len(fields) != 0 {

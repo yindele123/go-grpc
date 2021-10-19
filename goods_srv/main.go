@@ -43,8 +43,10 @@ func main() {
 	g := grpc.NewServer()
 	goodsServer := handler.GoodsServer{}
 	categoryServer:=handler.CategoryServer{}
+	bannerServer:=handler.BannerServer{}
 	proto.RegisterGoodsServer(g, &goodsServer)
 	proto.RegisterCategoryServer(g,&categoryServer)
+	proto.RegisterBannersServer(g,&bannerServer)
 	grpc_health_v1.RegisterHealthServer(g, &HealthImpl{})//比普通的grpc开启多了这一步
 
 	//注册服务

@@ -11,20 +11,20 @@ service Banners{
 }
 
 message BannerRequest {
-  int32 id = 1;
-  int32 index = 2;
+  uint32 id = 1;
+  uint32 index = 2;
   string image = 3;
   string url = 4;
 }
 
 message BannerResponse {
-  int32 id = 1;
-  int32 index = 2;
+  uint32 id = 1;
+  uint32 index = 2;
   string image = 3;
   string url = 4;
 }
 
 message BannerListResponse {
-  int32 total = 1;
+  uint32 total = 1;
   repeated BannerResponse data = 2;
 }

@@ -14,7 +14,7 @@ func main()  {
 	}
 	defer conn.Close()
 	//c := proto.NewGoodsClient(conn)
-	c := proto.NewCategoryClient(conn)
+	c := proto.NewBannersClient(conn)
 	//用户列表
 	/*r,err := c.GetGoodsList(context.Background(),&proto.PageInfo{
 		Pn:    1,
@@ -52,9 +52,11 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.UpdateCategory(context.Background(),&proto.CategoryInfoRequest{
-		Id: 1,
-		Name: "手机",
+	r,err :=c.UpdateBanner(context.Background(),&proto.BannerRequest{
+		Id: 2,
+		Index: 5,
+		Image: "http://bm.test.com/111111.jpg",
+		Url: "http://www.baidu.com",
 	})
 	if err!=nil{
 		panic(err)

@@ -22,7 +22,7 @@ func InitMysql() {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
 		NamingStrategy: schema.NamingStrategy{
-			TablePrefix:   "t_", // 表名前缀，`User`表为`t_users`
+			TablePrefix:   global.ServerConfig.MysqlInfo.TablePrefix, // 表名前缀，`User`表为`t_users`
 			SingularTable: true, // 使用单数表名，启用该选项后，`User` 表将是`user`
 		},
 	})

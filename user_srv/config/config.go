@@ -1,11 +1,12 @@
 package config
 
 type MysqlConfig struct {
-	Host     string `mapstructure:"host"  json:"host"`
-	Port     int    `mapstructure:"port"   json:"port"`
-	User     string `mapstructure:"user"  json:"user"`
-	Password string `mapstructure:"password"  json:"password"`
-	DbName   string `mapstructure:"dbName"  json:"dbName"`
+	Host        string `mapstructure:"host"  json:"host"`
+	Port        int    `mapstructure:"port"   json:"port"`
+	User        string `mapstructure:"user"  json:"user"`
+	Password    string `mapstructure:"password"  json:"password"`
+	DbName      string `mapstructure:"dbName"  json:"dbName"`
+	TablePrefix string `mapstructure:"tablePrefix"  json:"tablePrefix"`
 }
 
 type consulConfig struct {

@@ -1,6 +1,9 @@
 package model
 
-import "project/goods_srv/global"
+import (
+	"fmt"
+	"project/goods_srv/global"
+)
 
 type Category struct {
 	ID               uint32
@@ -26,7 +29,7 @@ type Goodscategorybrand struct {
 
 // TableName 表名
 func (Goodscategorybrand) TableName() string {
-	return "t_goodscategorybrand"
+	return fmt.Sprintf("%sgoodscategorybrand",global.ServerConfig.MysqlInfo.TablePrefix)
 }
 
 func GetCategoryList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (resCategory []Category, rows int64, err error) {

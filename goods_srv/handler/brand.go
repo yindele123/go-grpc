@@ -131,7 +131,8 @@ func (b *BrandServer) CategoryBrandList(ctx context.Context, request *proto.Cate
 	}
 	fmt.Println(offset)
 	handler := model.GetSearchModelHandler(&model.Goodscategorybrand{})
-	handler.Search()
+	str:=handler.Search()
+	fmt.Println(str)
 	//goodsList, rows, goodsErr := model.GetGoodsList("",[]interface{}{}, "", int(offset), int(limit))
 	return &proto.CategoryBrandListResponse{},nil
 }

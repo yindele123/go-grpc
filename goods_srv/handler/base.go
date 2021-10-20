@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"project/goods_srv/model"
 	"project/goods_srv/proto"
@@ -89,9 +90,15 @@ func WhereBuild(where map[string]interface{}) (whereSQL string, vals []interface
 	return
 }
 
+
 func ConvertGoodsToRsp(goods model.Goods, brands model.Brands, category model.Category) (goodsInfoRsp proto.GoodsInfoResponse) {
 	brandData := ConvertBrandsToRsp(brands)
 	categoryData := ConvertCategoryToRsp(category)
+	var images []string
+	var descImages []string
+	_=json.Unmarshal([]byte(goods.Images), &images)
+	_=json.Unmarshal([]byte(goods.DescImages), &descImages)
+
 	goodsInfoRsp.Id = goods.ID
 	goodsInfoRsp.CategoryId = goods.CategoryId
 	goodsInfoRsp.Name = goods.Name
@@ -103,8 +110,8 @@ func ConvertGoodsToRsp(goods model.Goods, brands model.Brands, category model.Ca
 	goodsInfoRsp.ShopPrice = goods.ShopPrice
 	goodsInfoRsp.GoodsBrief = goods.GoodsBrief
 	goodsInfoRsp.ShipFree = goods.ShipFree
-	goodsInfoRsp.Images = goods.Images
-	goodsInfoRsp.DescImages = goods.DescImages
+	goodsInfoRsp.Images = images
+	goodsInfoRsp.DescImages = descImages
 	goodsInfoRsp.GoodsFrontImage = goods.GoodsFrontImage
 	goodsInfoRsp.IsNew = goods.IsNew
 	goodsInfoRsp.IsHot = goods.IsHot

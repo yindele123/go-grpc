@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -154,7 +155,8 @@ func (g *GoodsServer) CreateGoods(ctx context.Context, request *proto.CreateGood
 	if brandsRows == 0 {
 		return &proto.GoodsInfoResponse{}, status.Errorf(codes.NotFound, "品牌不存在")
 	}
-
+	images, _ := json.Marshal(request.Images)
+	descImages, _ := json.Marshal(request.DescImages)
 	resCreate, er := model.CreateGoods(model.Goods{
 		CategoryId:      categoryFirst.ID,
 		BrandId:         brandsFirst.ID,
@@ -164,8 +166,8 @@ func (g *GoodsServer) CreateGoods(ctx context.Context, request *proto.CreateGood
 		ShopPrice:       request.ShopPrice,
 		GoodsBrief:      request.GoodsBrief,
 		ShipFree:        request.ShipFree,
-		Images:          request.Images,
-		DescImages:      request.DescImages,
+		Images:          string(images),
+		DescImages:      string(descImages),
 		GoodsFrontImage: request.GoodsFrontImage,
 		OnSale:          request.OnSale,
 		IsNew:           request.IsNew,
@@ -233,6 +235,8 @@ func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo
 	if goodsRows == 0 {
 		return &proto.Empty{}, status.Errorf(codes.NotFound, "商品不存在")
 	}
+	images, _ := json.Marshal(rq.Images)
+	descImages, _ := json.Marshal(rq.DescImages)
 	updateGoodsIsErr := model.UpdateGoods(model.Goods{
 		CategoryId:      categoryFirst.ID,
 		BrandId:         brandsFirst.ID,
@@ -242,8 +246,8 @@ func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo
 		ShopPrice:       rq.ShopPrice,
 		GoodsBrief:      rq.GoodsBrief,
 		ShipFree:        rq.ShipFree,
-		Images:          rq.Images,
-		DescImages:      rq.DescImages,
+		Images:          string(images),
+		DescImages:      string(descImages),
 		GoodsFrontImage: rq.GoodsFrontImage,
 		OnSale:          rq.OnSale,
 		IsNew:           rq.IsNew,

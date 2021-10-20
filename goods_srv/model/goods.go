@@ -18,8 +18,8 @@ type Goods struct {
 	ShopPrice       float32  `gorm:"type:decimal(10,2);comment:'本店价格';default:0"`
 	GoodsBrief      string   `gorm:"type:varchar(200);default:'';comment:'商品简短描述'"`
 	ShipFree        bool     `gorm:"type:bool;comment:'是否承担运费,1:是 0:否';default:true"`
-	Images          []string `gorm:"type:json;comment:'商品轮播图'"`
-	DescImages      []string `gorm:"type:json;comment:'详情页图片'"`
+	Images          string `gorm:"type:json;comment:'商品轮播图'"`
+	DescImages      string `gorm:"type:json;comment:'详情页图片'"`
 	GoodsFrontImage string   `gorm:"type:varchar(200);default:'';comment:'封面图'"`
 	IsNew           bool     `gorm:"type:bool;comment:'是否新品,1:是 0:否';default:false"`
 	IsHot           bool     `gorm:"type:bool;comment:'是否热销,1:是 0:否';default:false"`

@@ -88,11 +88,11 @@ func (g *GoodsServer) GoodsList(ctx context.Context, request *proto.GoodsFilterR
 	whereSql, vals, _ := WhereBuild(where)
 	var offset int32 = 0
 	var limit int32 = 10
-	if request.Pages != 0 {
-		limit = request.Pages
-	}
 	if request.PagePerNums != 0 {
-		offset = limit * (request.PagePerNums - 1)
+		limit = request.PagePerNums
+	}
+	if request.Pages != 0 {
+		offset = limit * (request.Pages - 1)
 	}
 	goodsList, rows, goodsErr := model.GetGoodsList(whereSql, vals, "", int(offset), int(limit))
 	if goodsErr != nil {

@@ -14,5 +14,8 @@ var (
 	Rdb          *redis.Client
 
 	GoodsSrvClient proto.GoodsClient
+	BannerSrvClient proto.BannersClient
+	CategorySrvClient proto.CategoryClient
+	BrandSrvClient proto.BrandsClient
 
 )

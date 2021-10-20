@@ -19,6 +19,8 @@ func InitSrvConn(){
 	if err != nil {
 		zap.S().Fatal("[InitSrvConn] 连接 【goods服务失败】")
 	}
-	goodsSrvClient := proto.NewGoodsClient(conn)
-	global.GoodsSrvClient = goodsSrvClient
+	global.GoodsSrvClient = proto.NewGoodsClient(conn)
+	global.BannerSrvClient=proto.NewBannersClient(conn)
+	global.CategorySrvClient=proto.NewCategoryClient(conn)
+	global.BrandSrvClient=proto.NewBrandsClient(conn)
 }

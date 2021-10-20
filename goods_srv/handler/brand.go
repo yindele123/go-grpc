@@ -84,12 +84,15 @@ func ConvertBrandInfoResponse(GoodscategorybrandList []model.Goodscategorybrand,
 func (b *BrandServer) BrandList(ctx context.Context, request *proto.BrandFilterRequest) (*proto.BrandListResponse, error) {
 	var offset int32 = 0
 	var limit int32 = 10
-	if request.Pages != 0 {
-		limit = request.Pages
-	}
+
 	if request.PagePerNums != 0 {
-		offset = limit * (request.PagePerNums - 1)
+		limit = request.PagePerNums
 	}
+	if request.Pages != 0 {
+		offset = limit * (request.Pages - 1)
+	}
+
+
 	brandList, brandRow, brandErr := model.GetBrandsList("", []interface{}{}, "id,name,logo", int(offset), int(limit))
 	if brandErr != nil {
 		zap.S().Error("服务器内部出错", brandErr.Error())
@@ -100,6 +103,7 @@ func (b *BrandServer) BrandList(ctx context.Context, request *proto.BrandFilterR
 		zap.S().Error("服务器内部出错", countErr.Error())
 		return &proto.BrandListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
+	fmt.Println(brandList)
 	result := make([]*proto.BrandInfoResponse, 0)
 	if brandRow != 0 {
 		for _, value := range brandList {

@@ -33,7 +33,7 @@ func HandleGrpcErrorToHttp(err error, c *gin.Context) {
 				})
 			default:
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"msg": e.Code(),
+					"msg": e.Message(),
 				})
 			}
 			return

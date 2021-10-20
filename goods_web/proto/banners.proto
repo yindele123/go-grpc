@@ -1,0 +1,30 @@
+syntax = "proto3";
+import "base.proto";
+option go_package = "./;proto";
+
+service Banners{
+  //轮播图
+  rpc BannerList(Empty) returns(BannerListResponse); //获取轮播列表信息
+  rpc CreateBanner(BannerRequest) returns(BannerResponse); //添加banner图
+  rpc DeleteBanner(BannerRequest) returns(Empty); //删除轮播图
+  rpc UpdateBanner(BannerRequest) returns(Empty); //修改轮播图
+}
+
+message BannerRequest {
+  uint32 id = 1;
+  uint32 index = 2;
+  string image = 3;
+  string url = 4;
+}
+
+message BannerResponse {
+  uint32 id = 1;
+  uint32 index = 2;
+  string image = 3;
+  string url = 4;
+}
+
+message BannerListResponse {
+  uint32 total = 1;
+  repeated BannerResponse data = 2;
+}

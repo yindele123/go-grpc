@@ -63,7 +63,6 @@ func main() {
 	if err == nil {
 		global.ServerConfig.Port = port
 	}
-	global.ServerConfig.Port=8911
 	rerr:=consulRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, []string{"xindele", "yindele123","goods-srv"}, serviceId)
 	if rerr != nil {
 		zap.S().Panic("注册服务失败:", rerr.Error())

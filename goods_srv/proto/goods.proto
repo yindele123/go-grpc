@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "base.proto";
 import "brands.proto";
+import "category.proto";
 option go_package = "./;proto";
 
 service Goods{
@@ -114,7 +115,7 @@ message GoodsInfoResponse {
     bool isHot = 18;
     bool onSale = 19;
     int64 addTime = 20;
-    CategoryBriefInfoResponse category = 21;
+    CategoryInfoResponse category = 21;
     BrandInfoResponse brand = 22;
 }
 

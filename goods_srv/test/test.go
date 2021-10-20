@@ -52,8 +52,10 @@ func main()  {
 	}
 	fmt.Println(r)*/
 	//添加用户
-	r,err :=c.CategoryBrandList(context.Background(),&proto.CategoryBrandFilterRequest{
-
+	r,err :=c.UpdateCategoryBrand(context.Background(),&proto.CategoryBrandRequest{
+		Id: 1,
+		BrandId: 3,
+		CategoryId: 2,
 	})
 	if err!=nil{
 		panic(err)

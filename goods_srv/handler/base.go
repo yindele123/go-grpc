@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-
 type NullType byte
 
 const (
@@ -18,8 +17,6 @@ const (
 	// IsNotNull the same as `is not null`
 	IsNotNull
 )
-
-
 
 func WhereBuild(where map[string]interface{}) (whereSQL string, vals []interface{}, err error) {
 	for k, v := range where {
@@ -92,48 +89,68 @@ func WhereBuild(where map[string]interface{}) (whereSQL string, vals []interface
 	return
 }
 
-
-
-func ConvertGoodsToRsp(goods model.Goods,brands model.Brands,category model.Category) (goodsInfoRsp proto.GoodsInfoResponse) {
+func ConvertGoodsToRsp(goods model.Goods, brands model.Brands, category model.Category) (goodsInfoRsp proto.GoodsInfoResponse) {
 	brandData := ConvertBrandsToRsp(brands)
 	categoryData := ConvertCategoryToRsp(category)
-	goodsInfoRsp.Id=goods.ID
-	goodsInfoRsp.CategoryId=goods.CategoryId
-	goodsInfoRsp.Name=goods.Name
-	goodsInfoRsp.GoodsSn=goods.GoodsSn
-	goodsInfoRsp.ClickNum=goods.ClickNum
-	goodsInfoRsp.SoldNum=goods.SoldNum
-	goodsInfoRsp.FavNum=goods.FavNum
-	goodsInfoRsp.MarketPrice=goods.MarketPrice
-	goodsInfoRsp.ShopPrice=goods.ShopPrice
-	goodsInfoRsp.GoodsBrief=goods.GoodsBrief
-	goodsInfoRsp.ShipFree=goods.ShipFree
-	goodsInfoRsp.Images=goods.Images
-	goodsInfoRsp.DescImages=goods.DescImages
-	goodsInfoRsp.GoodsFrontImage=goods.GoodsFrontImage
-	goodsInfoRsp.IsNew=goods.IsNew
-	goodsInfoRsp.IsHot=goods.IsHot
-	goodsInfoRsp.OnSale=goods.OnSale
-	goodsInfoRsp.Brand=&brandData
-	goodsInfoRsp.Category=&categoryData
+	goodsInfoRsp.Id = goods.ID
+	goodsInfoRsp.CategoryId = goods.CategoryId
+	goodsInfoRsp.Name = goods.Name
+	goodsInfoRsp.GoodsSn = goods.GoodsSn
+	goodsInfoRsp.ClickNum = goods.ClickNum
+	goodsInfoRsp.SoldNum = goods.SoldNum
+	goodsInfoRsp.FavNum = goods.FavNum
+	goodsInfoRsp.MarketPrice = goods.MarketPrice
+	goodsInfoRsp.ShopPrice = goods.ShopPrice
+	goodsInfoRsp.GoodsBrief = goods.GoodsBrief
+	goodsInfoRsp.ShipFree = goods.ShipFree
+	goodsInfoRsp.Images = goods.Images
+	goodsInfoRsp.DescImages = goods.DescImages
+	goodsInfoRsp.GoodsFrontImage = goods.GoodsFrontImage
+	goodsInfoRsp.IsNew = goods.IsNew
+	goodsInfoRsp.IsHot = goods.IsHot
+	goodsInfoRsp.OnSale = goods.OnSale
+	goodsInfoRsp.Brand = &brandData
+	goodsInfoRsp.Category = &categoryData
 	return goodsInfoRsp
 }
 
-func ConvertBrandsToRsp(brands model.Brands)   (brandInfoRsp proto.BrandInfoResponse) {
-	brandInfoRsp.Id=brands.ID
-	brandInfoRsp.Name=brands.Name
-	brandInfoRsp.Logo=brands.Logo
-	return  brandInfoRsp
+func ConvertBrands(BrandIds interface{}, field, key string) (result map[string][]interface{}, err error) {
+	brandsWhere, brandsVals, _ := WhereBuild(map[string]interface{}{"id in": BrandIds, "is_deleted": false})
+	brandsList, _, brandsErr := model.GetBrandsList(brandsWhere, brandsVals, field, 0, 0)
+	if brandsErr != nil {
+		return result, brandsErr
+	}
+	brandsConvert := StructSliceToMap(brandsList, key)
+	return brandsConvert, nil
 }
 
-
-func ConvertCategoryToRsp(category model.Category)   (categoryInfoRsp proto.CategoryBriefInfoResponse) {
-	categoryInfoRsp.Id=category.ID
-	categoryInfoRsp.Name=category.Name
-	return  categoryInfoRsp
+func ConvertCategory(categoryIds interface{}, field, key string) (result map[string][]interface{}, err error) {
+	categoryWhere, categoryVals, _ := WhereBuild(map[string]interface{}{"id in": categoryIds, "is_deleted": false})
+	categoryList, _, categoryErr := model.GetCategoryList(categoryWhere, categoryVals, field, 0, 0)
+	if categoryErr != nil {
+		return result, categoryErr
+	}
+	categoryConvert := StructSliceToMap(categoryList, key)
+	return categoryConvert, nil
 }
 
-func StructSliceToMap(source interface{},filedName string) map[string][]interface{}{
+func ConvertBrandsToRsp(brands model.Brands) (brandInfoRsp proto.BrandInfoResponse) {
+	brandInfoRsp.Id = brands.ID
+	brandInfoRsp.Name = brands.Name
+	brandInfoRsp.Logo = brands.Logo
+	return brandInfoRsp
+}
+
+func ConvertCategoryToRsp(category model.Category) (categoryInfoRsp proto.CategoryInfoResponse) {
+	categoryInfoRsp.Id = category.ID
+	categoryInfoRsp.Name = category.Name
+	categoryInfoRsp.ParentCategory = category.ParentCategoryId
+	categoryInfoRsp.Level = category.Level
+	categoryInfoRsp.IsTab = category.IsTab
+	return categoryInfoRsp
+}
+
+func StructSliceToMap(source interface{}, filedName string) map[string][]interface{} {
 	filedIndex := 0
 	v := reflect.ValueOf(source) // 判断，interface转为[]interface{}
 	resMap := make(map[string][]interface{})
@@ -156,7 +173,7 @@ func StructSliceToMap(source interface{},filedName string) map[string][]interfac
 	}
 	for _, elem := range retList {
 		key := reflect.ValueOf(elem).Field(filedIndex).Interface()
-		value :=  make([]interface{}, 0)
+		value := make([]interface{}, 0)
 		resMap[fmt.Sprint(key)] = value
 	}
 
@@ -167,10 +184,7 @@ func StructSliceToMap(source interface{},filedName string) map[string][]interfac
 	return resMap
 }
 
-
-
-
-func RemoveDuplicateElement(originals interface{}) (interface{}) {
+func RemoveDuplicateElement(originals interface{}) interface{} {
 	temp := map[string]struct{}{}
 	switch slice := originals.(type) {
 	case []string:

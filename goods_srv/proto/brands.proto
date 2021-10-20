@@ -30,7 +30,7 @@ message CategoryBrandRequest{
   int32 brandId = 3;
 }
 message CategoryBrandResponse{
-  int32 id = 1;
+  uint32 id = 1;
   BrandInfoResponse brand = 2;
   CategoryInfoResponse category = 3;
 }
@@ -62,6 +62,6 @@ message BrandListResponse {
 
 
 message CategoryBrandListResponse {
-  int32 total = 1;
+  uint32 total = 1;
   repeated CategoryBrandResponse data = 2;
 }

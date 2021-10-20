@@ -69,3 +69,52 @@ func UpdateCategory(data interface{}, whereSql string,vals []interface{}) (err e
 	result := global.MysqlDb.Model(&Category{}).Where(whereSql,vals...).Updates(data)
 	return result.Error
 }
+
+
+func GetGoodscategorybrandList(whereSql string,vals []interface{}, fields string, Offset int, limit int) (resGoodscategorybrand []Goodscategorybrand, rows uint32, err error) {
+	mod := global.MysqlDb.Limit(limit).Offset(Offset)
+	if len(fields) != 0 {
+		mod.Select(fields)
+	}
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
+	}
+	result := mod.Find(&resGoodscategorybrand)
+	return resGoodscategorybrand, uint32(result.RowsAffected), result.Error
+}
+
+func GetGoodscategorybrandFirst(whereSql string,vals []interface{}, fields string) (GoodscategorybrandFirst Goodscategorybrand, rows uint32, err error) {
+	mod := global.MysqlDb.Limit(1)
+	if len(fields) != 0 {
+		mod.Select(fields)
+	}
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
+	}
+	result := mod.Find(&GoodscategorybrandFirst)
+	return GoodscategorybrandFirst, uint32(result.RowsAffected), result.Error
+}
+
+
+func CreateGoodscategorybrand(goodscategorybrand Goodscategorybrand) (data Goodscategorybrand, err error) {
+	result := global.MysqlDb.Create(&goodscategorybrand)
+	return goodscategorybrand, result.Error
+}
+
+func UpdateGoodscategorybrand(data interface{}, whereSql string,vals []interface{}) (err error) {
+	if data == nil || len(whereSql) == 0 || len(vals) == 0{
+		return
+	}
+	result := global.MysqlDb.Model(&Goodscategorybrand{}).Where(whereSql,vals...).Updates(data)
+	return result.Error
+}
+
+func GetGoodscategorybrandCount(whereSql string,vals []interface{}) (count uint32, err error) {
+	mod := global.MysqlDb.Model(&Goodscategorybrand{})
+	if len(whereSql) != 0 && len(vals) != 0{
+		mod.Where(whereSql,vals...)
+	}
+	var resCount int64
+	result := mod.Count(&resCount)
+	return uint32(resCount), result.Error
+}

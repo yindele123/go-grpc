@@ -184,7 +184,7 @@ func (g *GoodsServer) CreateGoods(ctx context.Context, request *proto.CreateGood
 }
 
 func (g *GoodsServer) DeleteGoods(ctx context.Context, rq *proto.DeleteGoodsInfo) (*proto.Empty, error) {
-	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ?", []interface{}{rq.Id}, "id")
+	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ? and is_deleted=?", []interface{}{rq.Id, 0}, "id")
 
 	if goodsErr != nil {
 		zap.S().Error("服务器内部出错", goodsErr.Error())
@@ -205,27 +205,32 @@ func (g *GoodsServer) DeleteGoods(ctx context.Context, rq *proto.DeleteGoodsInfo
 }
 
 func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo) (*proto.Empty, error) {
-	categoryFirst, categoryRows, categoryErr := model.GetCategoryFirst("id = ?", []interface{}{rq.CategoryId}, "id,name")
+	if rq.CategoryId != 0 {
+		_, categoryRows, categoryErr := model.GetCategoryFirst("id = ?", []interface{}{rq.CategoryId}, "id,name")
 
-	if categoryErr != nil {
-		zap.S().Error("服务器内部出错", categoryErr.Error())
-		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
+		if categoryErr != nil {
+			zap.S().Error("服务器内部出错", categoryErr.Error())
+			return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
+		}
+
+		if categoryRows == 0 {
+			return &proto.Empty{}, status.Errorf(codes.NotFound, "商品分类不存在")
+		}
 	}
 
-	if categoryRows == 0 {
-		return &proto.Empty{}, status.Errorf(codes.NotFound, "商品分类不存在")
+	if rq.BrandId != 0 {
+		_, brandsRows, brandsErr := model.GetBrandsFirst("id = ?", []interface{}{rq.BrandId}, "id,name,logo")
+
+		if brandsErr != nil {
+			zap.S().Error("服务器内部出错", brandsErr.Error())
+			return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
+		}
+
+		if brandsRows == 0 {
+			return &proto.Empty{}, status.Errorf(codes.NotFound, "品牌不存在")
+		}
 	}
 
-	brandsFirst, brandsRows, brandsErr := model.GetBrandsFirst("id = ?", []interface{}{rq.BrandId}, "id,name,logo")
-
-	if brandsErr != nil {
-		zap.S().Error("服务器内部出错", brandsErr.Error())
-		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
-	}
-
-	if brandsRows == 0 {
-		return &proto.Empty{}, status.Errorf(codes.NotFound, "品牌不存在")
-	}
 
 	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ?", []interface{}{rq.Id}, "id")
 	if goodsErr != nil {
@@ -238,8 +243,8 @@ func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo
 	images, _ := json.Marshal(rq.Images)
 	descImages, _ := json.Marshal(rq.DescImages)
 	updateGoodsIsErr := model.UpdateGoods(model.Goods{
-		CategoryId:      categoryFirst.ID,
-		BrandId:         brandsFirst.ID,
+		CategoryId:      rq.CategoryId,
+		BrandId:         rq.BrandId,
 		GoodsSn:         rq.GoodsSn,
 		Name:            rq.Name,
 		MarketPrice:     rq.MarketPrice,

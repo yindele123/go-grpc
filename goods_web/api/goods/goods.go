@@ -43,7 +43,7 @@ func List(ctx *gin.Context) {
 	categoryIdInt, _ := strconv.Atoi(categoryId)
 	request.TopCategory = uint32(categoryIdInt)
 
-	pages := ctx.DefaultQuery("p", "0")
+	pages := ctx.DefaultQuery("pn", "0")
 	pagesInt, _ := strconv.Atoi(pages)
 	request.Pages = int32(pagesInt)
 

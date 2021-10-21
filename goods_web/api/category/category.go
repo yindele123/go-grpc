@@ -2,9 +2,7 @@ package category
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"net/http"
 	"project/goods_web/api"
 	"project/goods_web/forms"
@@ -13,24 +11,46 @@ import (
 	"strconv"
 )
 
+// 子级菜单
+type UmsMenuNode struct {
+	Id           uint32        `json:"id,omitempty"`
+	ParentId     uint32        `json:"parent_id"` // 父级ID
+	Name         string        `json:"name"`      // 菜单名称
+	Level        int32         `json:"level"`
+	IsTab        bool          `json:"is_tab"`
+	SubCategorys []UmsMenuNode `json:"subCategorys"`
+}
+
+//递归获取树形菜单
+func ConvertCategoryMenu(categoryList []*proto.CategoryInfoResponse, parentId uint32) []UmsMenuNode {
+	treeList := []UmsMenuNode{}
+	for _, item := range categoryList {
+		if item.ParentCategory == parentId {
+			child := ConvertCategoryMenu(categoryList, item.Id)
+			node := UmsMenuNode{
+				Id:       item.Id,
+				ParentId: item.ParentCategory,
+				Name:     item.Name,
+				Level:    item.Level,
+				IsTab:    item.IsTab,
+			}
+			node.SubCategorys = child
+			treeList = append(treeList, node)
+		}
+	}
+
+	return treeList
+}
+
 func List(ctx *gin.Context) {
-	getId := ctx.DefaultQuery("id", "0")
-	id, _ := strconv.Atoi(getId)
-	r, err := global.CategorySrvClient.GetAllCategorysList(context.Background(), &proto.CategoryListRequest{
-		Id: uint32(id),
-	})
+	r, err := global.CategorySrvClient.GetAllCategorysList(context.Background(), &proto.Empty{})
 	if err != nil {
 		api.HandleGrpcErrorToHttp(err, ctx)
 		return
 	}
+	res := ConvertCategoryMenu(r.Data, 0)
 
-	data := make([]interface{}, 0)
-	err = json.Unmarshal([]byte(r.JsonData), &data)
-	if err != nil {
-		zap.S().Errorw("[List] 查询 【分类列表】失败： ", err.Error())
-	}
-
-	ctx.JSON(http.StatusOK, data)
+	ctx.JSON(http.StatusOK, res)
 }
 
 func Delete(ctx *gin.Context) {
@@ -54,7 +74,29 @@ func Delete(ctx *gin.Context) {
 }
 
 func Detail(ctx *gin.Context) {
+	id := ctx.Param("id")
+	i, err := strconv.ParseInt(id, 10, 32)
+	if err != nil {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	r, err := global.CategorySrvClient.GetSubCategory(context.Background(), &proto.CategoryListRequest{
+		Id: uint32(i),
+	})
+	if err != nil {
+		api.HandleGrpcErrorToHttp(err, ctx)
+		return
+	}
+	subCategorys := ConvertCategoryMenu(r.SubCategorys, r.Info.Id)
+	reMap := make(map[string]interface{})
+	reMap["id"] = r.Info.Id
+	reMap["name"] = r.Info.Name
+	reMap["level"] = r.Info.Level
+	reMap["parent_category"] = r.Info.ParentCategory
+	reMap["is_tab"] = r.Info.IsTab
+	reMap["sub_categorys"] = subCategorys
 
+	ctx.JSON(http.StatusOK, reMap)
 }
 
 func New(ctx *gin.Context) {

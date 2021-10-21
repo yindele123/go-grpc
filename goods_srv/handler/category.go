@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,14 +15,66 @@ import (
 type CategoryServer struct {
 }
 
-func (c *CategoryServer) GetAllCategorysList(ctx context.Context, request *proto.CategoryListRequest) (*proto.CategoryListResponse, error) {
-	categoryList := utils.GetMenu(request.Id)
-	fmt.Println(categoryList)
-	jsonStr, _ := json.Marshal(categoryList)
+func ConvertCategoryInfoResponse(categoryList []model.Category, rows int64) (result []*proto.CategoryInfoResponse, err error) {
+	if rows != 0 {
+		for _, value := range categoryList {
+			res := proto.CategoryInfoResponse{
+				Id:             value.ID,
+				Name:           value.Name,
+				Level:          value.Level,
+				IsTab:          value.IsTab,
+				ParentCategory: value.ParentCategoryId,
+			}
+
+			result = append(result, &res)
+		}
+	}
+	return result, nil
+}
+
+func (c *CategoryServer) GetAllCategorysList(ctx context.Context, request *proto.Empty) (*proto.CategoryListResponse, error) {
+	categoryList, categoryRows, categoryErr := model.GetCategoryList("", []interface{}{}, "id,name,parent_category_id,level,is_tab", 0, 0)
+	if categoryErr != nil {
+		zap.S().Error("服务器内部出错", categoryErr.Error())
+		return &proto.CategoryListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	result, resErr := ConvertCategoryInfoResponse(categoryList, categoryRows)
+
+	if resErr != nil {
+		return &proto.CategoryListResponse{}, status.Errorf(codes.Internal, "服务器内部出错", resErr.Error())
+	}
+
+	jsonStr, _ := json.Marshal(result)
 	return &proto.CategoryListResponse{
-		Data:     categoryList,
+		Data:     result,
 		JsonData: string(jsonStr),
 	}, nil
+}
+
+func (c *CategoryServer) GetSubCategory(ctx context.Context, request *proto.CategoryListRequest) (*proto.SubCategoryListResponse, error) {
+	categoryFirst, categoryRows, categoryErr := model.GetCategoryFirst("id=? and is_deleted=?", []interface{}{request.Id, 0}, "id,name,parent_category_id,level,is_tab")
+	if categoryErr != nil {
+		zap.S().Error("服务器内部出错", categoryErr.Error())
+		return &proto.SubCategoryListResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	if categoryRows == 0 {
+		return &proto.SubCategoryListResponse{}, status.Errorf(codes.NotFound, "分类不存在")
+	}
+
+	var where = make(map[string]interface{}, 0)
+	ids := utils.GetMenuIds(request.Id)
+	where["id in"] = ids
+	whereSql, vals, _ := WhereBuild(where)
+	categoryList, categoryRows, categoryErr := model.GetCategoryList(whereSql, vals, "id,name,parent_category_id,level,is_tab", 0, 0)
+
+	resultSub, resErr := ConvertCategoryInfoResponse(categoryList, categoryRows)
+
+	if resErr != nil {
+		return &proto.SubCategoryListResponse{}, status.Errorf(codes.Internal, "服务器内部出错", resErr.Error())
+	}
+	resInfo := ConvertCategoryToRsp(categoryFirst)
+
+	return &proto.SubCategoryListResponse{SubCategorys: resultSub, Info: &resInfo}, nil
 }
 
 func (c *CategoryServer) CreateCategory(ctx context.Context, request *proto.CategoryInfoRequest) (*proto.CategoryInfoResponse, error) {

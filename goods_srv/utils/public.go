@@ -2,7 +2,6 @@ package utils
 
 import (
 	"project/goods_srv/model"
-	"project/goods_srv/proto"
 )
 
 // 子级菜单
@@ -16,7 +15,7 @@ type UmsMenuNode struct {
 }
 
 //递归获取树形菜单
-func GetMenu(parentId uint32) []*proto.CategoryInfoResponse {
+/*func GetMenu(parentId uint32) []*proto.CategoryInfoResponse {
 	//获取parentId的所有子菜单
 	categoryList, rows, _ := model.GetCategoryList("parent_category_id=?", []interface{}{parentId}, "id,parent_category_id,name,level,is_tab", 0, 0)
 	tree := make([]*proto.CategoryInfoResponse, 0)
@@ -36,7 +35,7 @@ func GetMenu(parentId uint32) []*proto.CategoryInfoResponse {
 	}
 
 	return tree
-}
+}*/
 
 func GetMenuIds(id uint32) []uint32 {
 	//获取parentId的所有子菜单

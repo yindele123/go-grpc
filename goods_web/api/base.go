@@ -25,7 +25,7 @@ func HandleGrpcErrorToHttp(err error, c *gin.Context) {
 				})
 			case codes.InvalidArgument:
 				c.JSON(http.StatusBadRequest, gin.H{
-					"msg": "参数错误",
+					"msg": e.Message(),
 				})
 			case codes.Unavailable:
 				c.JSON(http.StatusInternalServerError, gin.H{

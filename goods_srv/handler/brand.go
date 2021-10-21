@@ -251,6 +251,16 @@ func (b *BrandServer) GetCategoryBrandList(ctx context.Context, rq *proto.Catego
 }
 
 func (b *BrandServer) CreateCategoryBrand(ctx context.Context, request *proto.CategoryBrandRequest) (*proto.CategoryBrandResponse, error) {
+
+	_, firstRows, firstErr := model.GetGoodscategorybrandFirst("category_id = ? and brand_id= ?  and is_deleted=?", []interface{}{request.CategoryId, request.BrandId, 0}, "id")
+	if firstErr != nil {
+		zap.S().Error("服务器内部出错", firstErr.Error())
+		return &proto.CategoryBrandResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	if firstRows != 0 {
+		return &proto.CategoryBrandResponse{}, status.Errorf(codes.InvalidArgument, "该信息已经存在")
+	}
+
 	categoryFirst, categoryRows, categoryErr := model.GetCategoryFirst("id = ?", []interface{}{request.CategoryId}, "id,name,parent_category_id,level,is_tab")
 
 	if categoryErr != nil {

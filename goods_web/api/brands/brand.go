@@ -19,7 +19,7 @@ func BrandList(ctx *gin.Context) {
 	pSizeInt, _ := strconv.Atoi(pSize)
 
 	rsp, err := global.BrandSrvClient.BrandList(context.Background(), &proto.BrandFilterRequest{
-		Pages: int32(pnInt),
+		Pages:       int32(pnInt),
 		PagePerNums: int32(pSizeInt),
 	})
 
@@ -109,7 +109,6 @@ func UpdateBrand(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
-
 func CategoryBrandList(ctx *gin.Context) {
 	rsp, err := global.BrandSrvClient.CategoryBrandList(context.Background(), &proto.CategoryBrandFilterRequest{})
 	if err != nil {
@@ -126,11 +125,11 @@ func CategoryBrandList(ctx *gin.Context) {
 		reMap := make(map[string]interface{})
 		reMap["id"] = value.Id
 		reMap["category"] = map[string]interface{}{
-			"id": value.Category.Id,
+			"id":   value.Category.Id,
 			"name": value.Category.Name,
 		}
 		reMap["brand"] = map[string]interface{}{
-			"id": value.Brand.Id,
+			"id":   value.Brand.Id,
 			"name": value.Brand.Name,
 			"logo": value.Brand.Logo,
 		}
@@ -166,7 +165,7 @@ func NewCategoryBrand(ctx *gin.Context) {
 
 	rsp, err := global.BrandSrvClient.CreateCategoryBrand(context.Background(), &proto.CategoryBrandRequest{
 		CategoryId: int32(categoryBrandForm.CategoryId),
-		BrandId:       int32(categoryBrandForm.BrandId),
+		BrandId:    int32(categoryBrandForm.BrandId),
 	})
 	if err != nil {
 		api.HandleGrpcErrorToHttp(err, ctx)
@@ -175,14 +174,61 @@ func NewCategoryBrand(ctx *gin.Context) {
 
 	response := make(map[string]interface{})
 	response["id"] = rsp.Id
-	response["brand"]=rsp.Brand
-	response["category"]=rsp.Category
+	response["brand"] = rsp.Brand
+	response["category"] = rsp.Category
 
 	ctx.JSON(http.StatusOK, response)
 }
-func UpdateCategoryBrand(c *gin.Context)  {
+func UpdateCategoryBrand(ctx *gin.Context) {
+	categoryBrandForm := forms.CategoryBrandForm{}
+	if err := ctx.ShouldBindJSON(&categoryBrandForm); err != nil {
+		api.HandleValidatorError(ctx, err)
+		return
+	}
 
+	id := ctx.Param("id")
+	i, err := strconv.ParseInt(id, 10, 32)
+	if err != nil {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+
+	_, err = global.BrandSrvClient.UpdateCategoryBrand(context.Background(), &proto.CategoryBrandRequest{
+		Id:         int32(i),
+		CategoryId: int32(categoryBrandForm.CategoryId),
+		BrandId:    int32(categoryBrandForm.BrandId),
+	})
+	if err != nil {
+		api.HandleGrpcErrorToHttp(err, ctx)
+		return
+	}
+	ctx.Status(http.StatusOK)
 }
-func GetCategoryBrandList(c *gin.Context)  {
+func GetCategoryBrandList(ctx *gin.Context) {
+	id := ctx.Param("id")
+	i, err := strconv.ParseInt(id, 10, 32)
+	if err != nil {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
 
+	rsp, err := global.BrandSrvClient.GetCategoryBrandList(context.Background(), &proto.CategoryInfoRequest{
+		Id: uint32(i),
+	})
+	if err != nil {
+		api.HandleGrpcErrorToHttp(err, ctx)
+		return
+	}
+
+	result := make([]interface{}, 0)
+	for _, value := range rsp.Data {
+		reMap := make(map[string]interface{})
+		reMap["id"] = value.Id
+		reMap["name"] = value.Name
+		reMap["logo"] = value.Logo
+
+		result = append(result, reMap)
+	}
+
+	ctx.JSON(http.StatusOK, result)
 }

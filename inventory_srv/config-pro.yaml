@@ -1,0 +1,6 @@
+nacos:
+  host: '192.168.226.108'
+  port: 8848
+  namespaceId: '854534e7-37cf-4e62-acef-1db0b5946341'
+  dataId: 'inventory_srv.json'
+  group: 'pro'

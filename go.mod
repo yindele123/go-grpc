@@ -6,6 +6,7 @@ require (
 	github.com/alibabacloud-go/darabonba-openapi v0.1.7
 	github.com/alibabacloud-go/dysmsapi-20170525/v2 v2.0.2
 	github.com/alibabacloud-go/tea v1.1.17
+	github.com/bsm/redislock v0.7.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-gonic/gin v1.7.4

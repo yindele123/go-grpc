@@ -78,10 +78,10 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
 	wg.Add(1)
-	go func() {
+	go func(conduit chan bool) {
 		for {
 			select {
-			case <-done:
+			case <-conduit:
 				wg.Done()
 				return
 			default:
@@ -94,11 +94,12 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 				}
 			}
 		}
-	}()
+	}(done)
 	defer wg.Wait()
 	defer lock.Release(ctxLock)
 	defer func() {
 		done <- true
+		close(done)
 	}()
 	var goodsIdS []uint64
 	for _, value := range info.GoodsInfo {
@@ -156,10 +157,10 @@ func (i InventoryServer) Reback(ctx context.Context, info *proto.SellInfo) (*pro
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
 	wg.Add(1)
-	go func() {
+	go func(conduit chan bool) {
 		for {
 			select {
-			case <-done:
+			case <-conduit:
 				wg.Done()
 				return
 			default:
@@ -172,11 +173,12 @@ func (i InventoryServer) Reback(ctx context.Context, info *proto.SellInfo) (*pro
 				}
 			}
 		}
-	}()
+	}(done)
 	defer wg.Wait()
 	defer lock.Release(ctxLock)
 	defer func() {
 		done <- true
+		close(done)
 	}()
 	var goodsIdS []uint64
 	for _, value := range info.GoodsInfo {

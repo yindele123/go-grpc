@@ -78,7 +78,7 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
 	wg.Add(1)
-	go func(conduit chan bool) {
+	go func(conduit <-chan bool) {
 		for {
 			select {
 			case <-conduit:
@@ -157,7 +157,7 @@ func (i InventoryServer) Reback(ctx context.Context, info *proto.SellInfo) (*pro
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
 	wg.Add(1)
-	go func(conduit chan bool) {
+	go func(conduit <-chan bool) {
 		for {
 			select {
 			case <-conduit:

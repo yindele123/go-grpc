@@ -60,7 +60,6 @@ func (i InventoryServer) InvDetail(ctx context.Context, info *proto.GoodsInvInfo
 
 func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto.Empty, error) {
 	var wg sync.WaitGroup
-	done := make(chan bool, 0)
 	locker := redislock.New(global.Rdb)
 
 	ctxLock := context.Background()
@@ -77,11 +76,12 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 		zap.S().Error("服务器内部出错", err.Error())
 		return &proto.Empty{}, status.Errorf(codes.Internal, "服务器内部出错")
 	}
+	ctx,cancel:=context.WithCancel(ctx)
 	wg.Add(1)
-	go func(conduit <-chan bool) {
+	go func(ctx2 context.Context) {
 		for {
 			select {
-			case <-conduit:
+			case <-ctx2.Done():
 				wg.Done()
 				return
 			default:
@@ -94,13 +94,13 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 				}
 			}
 		}
-	}(done)
+	}(ctx)
 	defer wg.Wait()
 	defer lock.Release(ctxLock)
 	defer func() {
-		done <- true
-		close(done)
+		cancel()
 	}()
+	time.Sleep(35*time.Second)
 	var goodsIdS []uint64
 	for _, value := range info.GoodsInfo {
 		goodsIdS = append(goodsIdS, value.GoodsId)
@@ -147,7 +147,7 @@ func (i InventoryServer) Reback(ctx context.Context, info *proto.SellInfo) (*pro
 	var err error
 
 	for {
-		lock, err = locker.Obtain(ctxLock, "inventory_sell", 30*time.Second, nil)
+		lock, err = locker.Obtain(ctxLock, "inventory_reback", 30*time.Second, nil)
 		if redislock.ErrNotObtained != err {
 			break
 		}

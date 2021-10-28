@@ -97,9 +97,7 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 	}(ctx)
 	defer wg.Wait()
 	defer lock.Release(ctxLock)
-	defer func() {
-		cancel()
-	}()
+	defer cancel()
 	time.Sleep(35*time.Second)
 	var goodsIdS []uint64
 	for _, value := range info.GoodsInfo {

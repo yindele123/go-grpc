@@ -231,7 +231,6 @@ func (g *GoodsServer) UpdateGoods(ctx context.Context, rq *proto.CreateGoodsInfo
 		}
 	}
 
-
 	goodsFirst, goodsRows, goodsErr := model.GetGoodsFirst("id = ?", []interface{}{rq.Id}, "id")
 	if goodsErr != nil {
 		zap.S().Error("服务器内部出错", goodsErr.Error())

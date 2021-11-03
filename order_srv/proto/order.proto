@@ -1,0 +1,96 @@
+syntax = "proto3";
+package proto;
+import "base.proto";
+option go_package = "./;proto";
+
+service Order{
+  //购物车1
+  rpc CartItemList(UserInfo) returns (CartItemListResponse); //获取用户的所有购物车信息
+  rpc CreateCartItem(CartItemRequest) returns(ShopCartInfoResponse); //添加商品到购物车
+  rpc UpdateCartItem(CartItemRequest) returns(Empty); // 修改购物车条目信息
+  rpc DeleteCartItem(CartItemRequest) returns(Empty); //删除购物车条目
+
+  //订单
+  rpc CreateOrder(OrderRequest) returns (OrderInfoResponse); //新建订单
+  rpc OrderList(OrderFilterRequest) returns (OrderListResponse); //订单列表
+  rpc OrderDetail(OrderRequest) returns (OrderInfoDetailResponse); //订单的详情
+  rpc UpdateOrderStatus(OrderStatus) returns(Empty); //修改订单的支付状态
+}
+
+message UserInfo{
+  int32 id = 1;
+}
+
+message ShopCartInfoResponse {
+  uint32 id = 1;
+  uint32 userId = 2;
+  uint64 goodsId = 3;
+  uint32 nums = 4;
+  bool checked = 5;
+}
+
+message CartItemListResponse {
+  int32 total = 1;
+  repeated ShopCartInfoResponse data = 2;
+}
+
+message CartItemRequest {
+  uint32 userId = 2;
+  uint64 goodsId = 3;
+  uint32 nums = 4;
+  bool checked = 5;
+}
+
+message OrderRequest{
+  int32 id = 1;
+  int32 userId = 2;
+  string address = 3;
+  string mobile = 4;
+  string name = 5;
+  string post = 6;
+}
+
+message OrderInfoResponse {
+  uint64 id = 1;
+  uint32 userId = 2;
+  string orderSn = 3;
+  uint32 payType = 4;
+  uint32 status = 5;
+  string post = 6;
+  float total = 7;
+  string address = 8;
+  string name = 9;
+  string mobile = 10;
+  uint32 addTime = 11;
+}
+
+message OrderListResponse {
+  int32 total = 1;
+  repeated OrderInfoResponse data = 2;
+}
+
+message OrderFilterRequest {
+  int32 userId = 1;
+  int32 pages = 2;
+  int32 pagePerNums = 3;
+}
+
+message OrderItemResponse {
+  int32 id = 1;
+  int32 orderId = 2;
+  uint64 goodsId = 3;
+  string goodsName = 4;
+  string goodsImage = 5;
+  float goodsPrice = 6;
+  uint32 nums = 7;
+}
+
+message OrderInfoDetailResponse {
+  OrderInfoResponse orderInfo = 1;
+  repeated OrderItemResponse data = 2;
+}
+
+message OrderStatus {
+  string OrderSn = 1;
+  uint32 status = 2;
+}

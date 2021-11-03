@@ -10,7 +10,7 @@ type ConsulRegister struct {
 	Port int
 }
 
-func (c ConsulRegister) Register(address string, port int, name string, tags []string, id string) error {
+func (c ConsulRegister) Register(address string, port int, name string, tags interface{}, id string) error {
 	cfg := api.DefaultConfig()
 	cfg.Address = fmt.Sprintf("%s:%d", c.Host, c.Port)
 
@@ -32,7 +32,7 @@ func (c ConsulRegister) Register(address string, port int, name string, tags []s
 	registration.Name = name
 	registration.ID = id
 	registration.Port = port
-	registration.Tags = tags
+	registration.Tags = tags.([]string)
 	registration.Address = address
 	registration.Check = check
 
@@ -54,10 +54,3 @@ func (c ConsulRegister) Deregister(serviceId string) error {
 	return err
 }
 
-func (c ConsulRegister) GetAllAervice() (str map[string]*api.AgentService) {
-	return
-}
-
-func (c ConsulRegister) FilterService(filter string) (str map[string]*api.AgentService) {
-	return
-}

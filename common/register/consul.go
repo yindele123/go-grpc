@@ -42,7 +42,7 @@ func (c ConsulRegister) Register(address string, port int, name string, tags int
 	}
 	return nil
 }
-func (c ConsulRegister) Deregister(serviceId string) error {
+func (c ConsulRegister) Deregister(serviceId string, address string, port int, name string) error {
 	cfg := api.DefaultConfig()
 	cfg.Address = fmt.Sprintf("%s:%d", c.Host, c.Port)
 

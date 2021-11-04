@@ -6,12 +6,12 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go.uber.org/zap"
-	"project/order_srv/global"
 )
 
 type NacosRegister struct {
-	Host string
-	Port uint64
+	Host        string
+	Port        uint64
+	NamespaceId string
 }
 
 func (n NacosRegister) Client() (iClient naming_client.INamingClient, err error) {
@@ -24,7 +24,7 @@ func (n NacosRegister) Client() (iClient naming_client.INamingClient, err error)
 	}
 	// 创建clientConfig
 	clientConfig := constant.ClientConfig{
-		NamespaceId:         global.NacosConfig.NacosInfo.NamespaceId, // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
+		NamespaceId:         n.NamespaceId, // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
 		TimeoutMs:           5000,
 		NotLoadCacheAtStart: true,
 		LogDir:              "/tmp/nacos/log",
@@ -64,16 +64,16 @@ func (n NacosRegister) Register(address string, port int, name string, tags inte
 
 }
 
-func (n NacosRegister) Deregister(serviceId string) error {
+func (n NacosRegister) Deregister(serviceId string, address string, port int, name string) error {
 	configClient, clientErr := n.Client()
 	if clientErr != nil {
 		zap.S().Panic("链接nacos失败!", clientErr.Error())
 		return clientErr
 	}
 	_, err := configClient.DeregisterInstance(vo.DeregisterInstanceParam{
-		Ip:          global.ServerConfig.Host,
-		Port:        uint64(global.ServerConfig.Port),
-		ServiceName: global.ServerConfig.ServiceName,
+		Ip:          address,
+		Port:        uint64(port),
+		ServiceName: name,
 		Ephemeral:   true,
 	})
 	if err != nil {

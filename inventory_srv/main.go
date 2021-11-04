@@ -76,7 +76,7 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	if err := consulRegister.Deregister(serviceId); err != nil {
+	if err := consulRegister.Deregister(serviceId,global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName); err != nil {
 		zap.S().Info("注销失败:", err.Error())
 	}else{
 		zap.S().Info("注销成功:")

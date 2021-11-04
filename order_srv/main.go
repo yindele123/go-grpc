@@ -50,15 +50,16 @@ func main() {
 	uuid, _ := uuid.NewV4()
 	serviceId := fmt.Sprintf("%s", uuid)
 	var nacosRegister register.Register = register.NacosRegister{
-		Host: global.NacosConfig.NacosInfo.Host,
-		Port: global.NacosConfig.NacosInfo.Port,
+		Host:        global.NacosConfig.NacosInfo.Host,
+		Port:        global.NacosConfig.NacosInfo.Port,
+		NamespaceId: global.NacosConfig.NacosInfo.NamespaceId,
 	}
 	port, err := utils.GetFreePort()
 	if err == nil {
 		global.ServerConfig.Port = port
 	}
-	global.ServerConfig.Port=8520
-	rerr := nacosRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, map[string]string{"idc": "xindele","name":"yindele123","server":"order-srv"}, serviceId)
+	global.ServerConfig.Port = 8520
+	rerr := nacosRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, map[string]string{"idc": "xindele", "name": "yindele123", "server": "order-srv"}, serviceId)
 	if rerr != nil {
 		zap.S().Panic("注册服务失败:", rerr.Error())
 	}
@@ -74,7 +75,7 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	if err := nacosRegister.Deregister(serviceId); err != nil {
+	if err := nacosRegister.Deregister(serviceId, global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName); err != nil {
 		zap.S().Info("注销失败:", err.Error())
 	} else {
 		zap.S().Info("注销成功:")

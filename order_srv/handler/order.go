@@ -256,7 +256,7 @@ func (o *OrderServer) CreateOrder(ctx context.Context, request *proto.OrderReque
 		return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "订单创建失败")
 	}
 	tx.Commit()
-	return &proto.OrderInfoResponse{}, nil
+	return &proto.OrderInfoResponse{Id: orderinfoFind.ID,OrderSn: orderSn,Total: orderAmount}, nil
 }
 
 func (o *OrderServer) OrderList(ctx context.Context, request *proto.OrderFilterRequest) (*proto.OrderListResponse, error) {

@@ -16,10 +16,15 @@ func main()  {
 	//c := proto.NewGoodsClient(conn)
 	c := proto.NewOrderClient(conn)
 	//添加用户
-	r,err :=c.UpdateOrderStatus(context.Background(),&proto.OrderStatus{
-		OrderSn: "a213123",
-		Status: 2,
+	r,err :=c.CreateOrder(context.Background(),&proto.OrderRequest{
+		UserId: 1,
 	})
+	/*r,err :=c.CreateCartItem(context.Background(),&proto.CartItemRequest{
+		UserId: 1,
+		GoodsId:5,
+		Nums: 1,
+		Checked: true,
+	})*/
 	if err!=nil{
 		panic(err)
 	}

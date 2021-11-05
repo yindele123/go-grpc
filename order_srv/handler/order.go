@@ -2,15 +2,25 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"math/rand"
+	"project/order_srv/global"
 	"project/order_srv/model"
 	"project/order_srv/proto"
+	"project/order_srv/utils/register"
+	"strings"
 	"time"
 )
 
 type OrderServer struct {
+}
+
+func GenerateOrderDn(userid uint32) string {
+	t := time.Now()
+	return fmt.Sprintf("%d%d%d%d%d", t.Year(), t.Month(), t.Day(), userid, rand.Intn(100))
 }
 
 func (o *OrderServer) CartItemList(ctx context.Context, info *proto.UserInfo) (*proto.CartItemListResponse, error) {
@@ -135,7 +145,118 @@ func (o *OrderServer) DeleteCartItem(ctx context.Context, request *proto.CartIte
 }
 
 func (o *OrderServer) CreateOrder(ctx context.Context, request *proto.OrderRequest) (*proto.OrderInfoResponse, error) {
-	panic("implement me")
+	shoppingcartList, shoppingcartRow, shoppingcartErr := model.GetShoppingcartList("user = ? and checked =? and is_deleted=?", []interface{}{request.UserId, 1, 0}, "", 0, 0)
+	if shoppingcartErr != nil {
+		zap.S().Error("服务器内部出错", shoppingcartErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "服务器内部出错")
+	}
+	if shoppingcartRow == 0 {
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.NotFound, "请提交商品")
+	}
+	var goodids []uint64
+	var orderAmount float32
+	var goodsNums = make(map[uint64]uint32)
+	var orderGoodsList []model.Ordergoods
+	var goodsSellInfo []*proto.GoodsInvInfo
+	for _, val := range shoppingcartList {
+		goodids = append(goodids, val.Goods)
+		goodsNums[val.Goods] = val.Nums
+	}
+	var consulRegister register.Register = register.ConsulRegister{
+		Host: global.ServerConfig.GoodsSrv.Consul.Host,
+		Port: global.ServerConfig.GoodsSrv.Consul.Port,
+	}
+	goodsClientConn, goodsClientErr := consulRegister.GetServuce(global.ServerConfig.GoodsSrv.Name)
+	if goodsClientErr != nil {
+		zap.S().Error("商品服务不可用", goodsClientErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "商品服务不可用")
+	}
+	goodsSrvClient := proto.NewGoodsClient(goodsClientConn)
+
+	goodsList, goodsListErr := goodsSrvClient.BatchGetGoods(context.Background(), &proto.BatchGoodsIdInfo{
+		Id: goodids,
+	})
+	if goodsListErr != nil {
+		zap.S().Error("商品服务不可用", goodsListErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "商品服务不可用")
+	}
+	for _, goodsInfo := range goodsList.Data {
+		orderAmount += goodsInfo.ShopPrice * float32(goodsNums[goodsInfo.Id])
+		orderGoods := model.Ordergoods{
+			Goods:      goodsInfo.Id,
+			GoodsName:  goodsInfo.Name,
+			GoodsImage: goodsInfo.GoodsFrontImage,
+			GoodsPrice: goodsInfo.ShopPrice,
+			Nums:       goodsNums[goodsInfo.Id],
+		}
+		orderGoodsList = append(orderGoodsList, orderGoods)
+
+		goodsSellInfoD := &proto.GoodsInvInfo{
+			GoodsId: goodsInfo.Id,
+			Num:     goodsNums[goodsInfo.Id],
+		}
+		goodsSellInfo = append(goodsSellInfo, goodsSellInfoD)
+	}
+	orderSn := GenerateOrderDn(request.UserId)
+	//库存服务
+	consulRegister = register.ConsulRegister{
+		Host: global.ServerConfig.InvSrv.Consul.Host,
+		Port: global.ServerConfig.InvSrv.Consul.Port,
+	}
+	invClientConn, invClientErr := consulRegister.GetServuce(global.ServerConfig.InvSrv.Name)
+	if invClientErr != nil {
+		zap.S().Error("库存服务不可用", invClientErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "库存服务不可用")
+	}
+	invSrvClient := proto.NewInventoryClient(invClientConn)
+	_, invSellErr := invSrvClient.Sell(context.Background(), &proto.SellInfo{GoodsInfo: goodsSellInfo, OrderSn: orderSn})
+	if invSellErr != nil {
+		zap.S().Error("扣减库存失败", invSellErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "扣减库存失败")
+	}
+	var timeData = uint32(time.Now().Unix())
+	var orderinfoFind = model.Orderinfo{
+		OrderSn:      orderSn,
+		OrderMount:   orderAmount,
+		Address:      request.Address,
+		SignerName:   request.Name,
+		SingerMobile: request.Mobile,
+		Post:         request.Post,
+		User:         request.UserId,
+		CreatedAt:    timeData,
+	}
+	tx := global.MysqlDb.Begin()
+	orderinfoFindErr := tx.Create(&orderinfoFind).Error
+	if orderinfoFindErr != nil {
+		tx.Rollback()
+		zap.S().Error("服务器内部出错", orderinfoFindErr.Error())
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "订单创建失败")
+	}
+	var orderGoodsSql string
+	if len(orderGoodsList) != 0 {
+		for _, val := range orderGoodsList {
+			orderGoodsSql += fmt.Sprintf("('%d','%d','%s','%s','%v','%d','%d'),", orderinfoFind.ID, val.Goods, val.GoodsName, val.GoodsImage, val.GoodsPrice, val.Nums, timeData)
+		}
+		fields := "`order`,`goods`,`goods_name`,`goods_image`,`goods_price`,`nums`,`created_at`"
+		if len(orderGoodsSql) != 0 {
+			orderGoodsSql = strings.Trim(orderGoodsSql, ",")
+			insertOk := model.BatchSave(tx, "ordergoods", fields, orderGoodsSql)
+			//insertOk = false
+			if !insertOk {
+				tx.Rollback()
+				return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "订单创建失败")
+			}
+		}
+	}
+
+	shoppingcartE := tx.Model(&model.Shoppingcart{}).Where("user=? and checked=?",request.UserId,true).Updates(model.Shoppingcart{IsDeleted: true, DeletedAt: timeData}).Debug().Error
+	if shoppingcartE != nil {
+		fmt.Println(shoppingcartE.Error())
+		tx.Rollback()
+		return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "订单创建失败")
+	}
+	tx.Commit()
+	return &proto.OrderInfoResponse{}, nil
 }
 
 func (o *OrderServer) OrderList(ctx context.Context, request *proto.OrderFilterRequest) (*proto.OrderListResponse, error) {

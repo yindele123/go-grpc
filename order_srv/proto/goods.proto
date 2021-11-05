@@ -1,0 +1,125 @@
+syntax = "proto3";
+import "base.proto";
+import "brands.proto";
+import "category.proto";
+option go_package = "./;proto";
+
+service Goods{
+  //商品接口
+  rpc GoodsList(GoodsFilterRequest) returns(GoodsListResponse);
+  //现在用户提交订单有多个商品，你得批量查询商品的信息吧
+  rpc BatchGetGoods(BatchGoodsIdInfo) returns(GoodsListResponse); //批量获取商品信息
+  rpc CreateGoods(CreateGoodsInfo) returns (GoodsInfoResponse);
+  rpc DeleteGoods(DeleteGoodsInfo) returns (Empty);
+  rpc UpdateGoods(CreateGoodsInfo) returns (Empty);
+  rpc GetGoodsDetail(GoodInfoRequest) returns(GoodsInfoResponse);
+
+}
+
+message QueryCategoryRequest {
+  int32 id = 1;
+  string name = 2;
+}
+
+
+message FilterRequest  {
+  int32 pages = 1;
+  int32 pagePerNums = 2;
+}
+
+message BatchGoodsIdInfo {
+  repeated uint64 id = 1;
+}
+
+
+message DeleteGoodsInfo {
+  int32 id = 1;
+}
+
+message CategoryBriefInfoResponse {
+  uint32 id = 1;
+  string name = 2;
+}
+
+message CategoryFilterRequest {
+  int32 id = 1;
+  bool  isTab = 2;
+}
+
+message GoodInfoRequest {
+  int32 id = 1;
+}
+
+message CreateGoodsInfo {
+  int32 id = 1;
+  string name = 2;
+  string goodsSn = 3;
+  int32 stocks = 7; //库存，
+  float marketPrice = 8;
+  float shopPrice = 9;
+  string goodsBrief = 10;
+  string goodsDesc = 11;
+  bool shipFree = 12;
+  repeated string images = 13;
+  repeated string descImages = 14;
+  string goodsFrontImage = 15;
+  bool isNew = 16;
+  bool isHot = 17;
+  bool onSale = 18;
+  uint32 categoryId = 19;
+  uint32 brandId = 20;
+}
+
+message GoodsReduceRequest {
+  int32 GoodsId = 1;
+  int32 nums = 2;
+}
+
+message BatchCategoryInfoRequest {
+  repeated int32 id = 1;
+  int32 goodsNums = 2;
+  int32 brandNums = 3;
+}
+
+message GoodsFilterRequest  {
+  int32 priceMin = 1;
+  int32 priceMax = 2;
+  bool  isHot = 3;
+  bool  isNew = 4;
+  bool  isTab = 5;
+  uint32 topCategory = 6;
+  int32 pages = 7;
+  int32 pagePerNums = 8;
+  string keyWords = 9;
+  int32 brand = 10;
+}
+
+
+message GoodsInfoResponse {
+  uint64 id = 1;
+  uint32 categoryId = 2;
+  string name = 3;
+  string goodsSn = 4;
+  uint32 clickNum = 5;
+  uint32 soldNum = 6;
+  uint32 favNum = 7;
+  float marketPrice = 9;
+  float shopPrice = 10;
+  string goodsBrief = 11;
+  string goodsDesc = 12;
+  bool shipFree = 13;
+  repeated string images = 14;
+  repeated string descImages = 15;
+  string goodsFrontImage = 16;
+  bool isNew = 17;
+  bool isHot = 18;
+  bool onSale = 19;
+  int64 addTime = 20;
+  CategoryInfoResponse category = 21;
+  BrandInfoResponse brand = 22;
+}
+
+message GoodsListResponse {
+  int64 total = 1;
+  repeated GoodsInfoResponse data = 2;
+}

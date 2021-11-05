@@ -8,7 +8,7 @@ type Orderinfo struct {
 	OrderSn      string  `gorm:"unique;type:varchar(30);default:'';comment:'订单号'"`
 	PayType      uint32  `gorm:"type:tinyint(2) UNSIGNED;comment:'支付方式  1:支付宝  2:微信...';default:1"`
 	Status       uint32  `gorm:"type:tinyint(2) UNSIGNED;comment:'订单状态  1:成功  2:超时关闭 3:交易创建 4:交易结束';default:1"`
-	TradeNo      string  `gorm:"unique;type:varchar(100);default:'';comment:'交易号'"`
+	TradeNo      *string  `gorm:"unique;type:varchar(100);comment:'交易号'"`
 	OrderMount   float32 `gorm:"type:decimal(10,2);comment:'订单金额';default:0"`
 	PayTime      uint32  `gorm:"comment:'支付时间';default:0"`
 	Address      string  `gorm:"type:varchar(100);default:'';comment:'收货地址'"`
@@ -60,4 +60,9 @@ func UpdateOrderinfo(data interface{}, whereSql string, vals []interface{}) (err
 	}
 	result := global.MysqlDb.Model(&Orderinfo{}).Where(whereSql, vals...).Updates(data)
 	return result.Error
+}
+
+func CreateOrderinfo(orderinfo Orderinfo) (data Orderinfo, err error) {
+	result := global.MysqlDb.Create(&orderinfo)
+	return orderinfo, result.Error
 }

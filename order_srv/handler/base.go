@@ -87,7 +87,6 @@ func WhereBuild(where map[string]interface{}) (whereSQL string, vals []interface
 	return
 }
 
-
 func StructSliceToMap(source interface{}, filedName string) map[string][]interface{} {
 	filedIndex := 0
 	v := reflect.ValueOf(source) // 判断，interface转为[]interface{}

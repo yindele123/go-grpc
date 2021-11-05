@@ -98,7 +98,6 @@ func (i InventoryServer) Sell(ctx context.Context, info *proto.SellInfo) (*proto
 	defer wg.Wait()
 	defer lock.Release(ctxLock)
 	defer cancel()
-	time.Sleep(35*time.Second)
 	var goodsIdS []uint64
 	for _, value := range info.GoodsInfo {
 		goodsIdS = append(goodsIdS, value.GoodsId)

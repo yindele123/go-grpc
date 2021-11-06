@@ -7,7 +7,7 @@ type Shoppingcart struct {
 	User      uint32 `gorm:"comment:'用户id';default:0"`
 	Goods     uint64 `gorm:"comment:'商品id';default:0"`
 	Nums      uint32 `gorm:"comment:'购买数量';default:0"`
-	Checked   bool   `gorm:"type:bool;comment:'是否选中,1:是 0:否';default:false"`
+	Checked   *bool   `gorm:"type:bool;comment:'是否选中,1:是 0:否';default:false"`
 	CreatedAt uint32 `gorm:"comment:'添加时间';default:0"`
 	UpdatedAt uint32 `gorm:"comment:'更新时间';default:0"`
 	IsDeleted bool   `gorm:"type:bool;comment:'是否删除,1:是 0:否';default:false"`

@@ -1,0 +1,21 @@
+syntax = "proto3";
+import "base.proto";
+option go_package = "./;proto";
+
+
+service Inventory {
+    rpc SetInv(GoodsInvInfo) returns (Empty); //设置库存
+    rpc InvDetail(GoodsInvInfo) returns (GoodsInvInfo); //获取库存信息
+    rpc Sell(SellInfo) returns (Empty); //扣减库存
+    rpc Reback(SellInfo) returns(Empty); //库存归还
+}
+
+message GoodsInvInfo {
+    uint64 goodsId = 1;
+    uint32 num = 2;
+}
+
+message SellInfo {
+    repeated GoodsInvInfo goodsInfo = 1;
+    string orderSn = 2;
+}

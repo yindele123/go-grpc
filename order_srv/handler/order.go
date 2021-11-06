@@ -50,7 +50,7 @@ func (o *OrderServer) CartItemList(ctx context.Context, info *proto.UserInfo) (*
 				UserId:  value.User,
 				GoodsId: value.Goods,
 				Nums:    value.Nums,
-				Checked: value.Checked,
+				Checked: *value.Checked,
 			}
 			result = append(result, res)
 		}
@@ -80,13 +80,13 @@ func (o *OrderServer) CreateCartItem(ctx context.Context, request *proto.CartIte
 			Goods:   request.GoodsId,
 			User:    request.UserId,
 			Nums:    request.Nums,
-			Checked: request.Checked,
+			Checked: &request.Checked,
 		})
 	} else {
 		sqlErr = model.UpdateShoppingcart(model.Shoppingcart{
 			Nums:      shoppingcartFirst.Nums + request.Nums,
 			UpdatedAt: uint32(time.Now().Unix()),
-			Checked:   request.Checked,
+			Checked:   &request.Checked,
 		}, "id=?", []interface{}{shoppingcartFirst.ID})
 	}
 	if sqlErr != nil {
@@ -112,7 +112,7 @@ func (o *OrderServer) UpdateCartItem(ctx context.Context, request *proto.CartIte
 	}
 	err := model.UpdateShoppingcart(model.Shoppingcart{
 		Nums:      nums,
-		Checked:   request.Checked,
+		Checked:   &request.Checked,
 		UpdatedAt: uint32(time.Now().Unix()),
 	}, "id=?", []interface{}{shoppingcartFirst.ID})
 	if err != nil {
@@ -211,8 +211,14 @@ func (o *OrderServer) CreateOrder(ctx context.Context, request *proto.OrderReque
 	invSrvClient := proto.NewInventoryClient(invClientConn)
 	_, invSellErr := invSrvClient.Sell(context.Background(), &proto.SellInfo{GoodsInfo: goodsSellInfo, OrderSn: orderSn})
 	if invSellErr != nil {
+		e, _ := status.FromError(invSellErr)
 		zap.S().Error("扣减库存失败", invSellErr.Error())
-		return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "扣减库存失败")
+		if e.Code() == codes.ResourceExhausted {
+			return &proto.OrderInfoResponse{}, status.Errorf(codes.ResourceExhausted, e.Message())
+		} else {
+			return &proto.OrderInfoResponse{}, status.Errorf(codes.Unavailable, "扣减库存失败")
+		}
+
 	}
 	var timeData = uint32(time.Now().Unix())
 	var orderinfoFind = model.Orderinfo{
@@ -249,14 +255,14 @@ func (o *OrderServer) CreateOrder(ctx context.Context, request *proto.OrderReque
 		}
 	}
 
-	shoppingcartE := tx.Model(&model.Shoppingcart{}).Where("user=? and checked=?",request.UserId,true).Updates(model.Shoppingcart{IsDeleted: true, DeletedAt: timeData}).Debug().Error
+	shoppingcartE := tx.Model(&model.Shoppingcart{}).Where("user=? and checked=?", request.UserId, true).Updates(model.Shoppingcart{IsDeleted: true, DeletedAt: timeData}).Debug().Error
 	if shoppingcartE != nil {
 		fmt.Println(shoppingcartE.Error())
 		tx.Rollback()
 		return &proto.OrderInfoResponse{}, status.Errorf(codes.Internal, "订单创建失败")
 	}
 	tx.Commit()
-	return &proto.OrderInfoResponse{Id: orderinfoFind.ID,OrderSn: orderSn,Total: orderAmount}, nil
+	return &proto.OrderInfoResponse{Id: orderinfoFind.ID, OrderSn: orderSn, Total: orderAmount}, nil
 }
 
 func (o *OrderServer) OrderList(ctx context.Context, request *proto.OrderFilterRequest) (*proto.OrderListResponse, error) {
@@ -308,7 +314,15 @@ func (o *OrderServer) OrderList(ctx context.Context, request *proto.OrderFilterR
 }
 
 func (o *OrderServer) OrderDetail(ctx context.Context, request *proto.OrderRequest) (*proto.OrderInfoDetailResponse, error) {
-	orderInfo, orderInfoRow, orderInfoErr := model.GetOrderinfoFirst("is_deleted=? and id=?", []interface{}{0, request.Id}, "id,user,order_sn,pay_type,status,post,order_mount,address,signer_name,singer_mobile")
+	var where = make(map[string]interface{}, 0)
+	where["is_deleted"] = 0
+	where["id"] = request.Id
+	if request.UserId != 0 {
+		where["user"] = request.UserId
+	}
+
+	whereSql, vals, _ := WhereBuild(where)
+	orderInfo, orderInfoRow, orderInfoErr := model.GetOrderinfoFirst(whereSql, vals, "id,user,order_sn,pay_type,status,post,order_mount,address,signer_name,singer_mobile")
 	if orderInfoErr != nil {
 		zap.S().Error("服务器内部出错", orderInfoErr.Error())
 		return &proto.OrderInfoDetailResponse{}, status.Errorf(codes.Internal, "服务器内部出错")

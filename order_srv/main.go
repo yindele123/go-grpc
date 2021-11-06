@@ -58,7 +58,6 @@ func main() {
 	if err == nil {
 		global.ServerConfig.Port = port
 	}
-	global.ServerConfig.Port = 8520
 	rerr := nacosRegister.Register(global.ServerConfig.Host, global.ServerConfig.Port, global.ServerConfig.ServiceName, map[string]string{"idc": "xindele", "name": "yindele123", "server": "order-srv"}, serviceId)
 	if rerr != nil {
 		zap.S().Panic("注册服务失败:", rerr.Error())

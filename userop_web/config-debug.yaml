@@ -1,0 +1,6 @@
+nacos:
+  host: '192.168.226.108'
+  port: 8848
+  namespaceId: '98a85ca7-b54d-41b4-99ec-3994eaa3be3c'
+  dataId: 'userop_web.json'
+  group: 'debug'
